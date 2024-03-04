@@ -5,7 +5,7 @@ JavaScript utils for Cloudflare dev services.
 ## Usage
 
 ```sh
-npm install treeder/cloudflare
+npm install treeder/cloudflare-funcs
 ```
 
 In your workers or pages functions, initialize with the binding:
