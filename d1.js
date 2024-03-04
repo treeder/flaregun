@@ -73,7 +73,9 @@ export class D1 {
         console.log("SQL:", s, values)
         let st = this.db.prepare(s).bind(...this.toValues(values))
         let r = await st.run()
-        return { id: id, response: r }
+        let o = {}
+        fields.forEach((f, i) => o[f] = values[i])
+        return { id: id, response: r, object: o }
     }
 
     async update(table, id, fields, values) {
@@ -85,7 +87,9 @@ export class D1 {
         console.log("SQL:", s, values)
         let st = this.db.prepare(s).bind(...this.toValues(values))
         let r = await st.run()
-        return { id: id, response: r }
+        let o = {}
+        fields.forEach((f, i) => o[f] = values[i])
+        return { id: id, response: r, object: o }
     }
 
     toValues(values) {
