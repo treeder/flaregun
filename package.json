@@ -1,6 +1,6 @@
 {
   "name": "cloudflare",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JavaScript utils for Cloudflare dev services.",
   "main": "d1.js",
   "scripts": {
