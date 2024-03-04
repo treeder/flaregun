@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/treeder/cloudflare-funcs/issues"
   },
-  "homepage": "https://github.com/treeder/cloudflare-funcs#readme"
+  "homepage": "https://github.com/treeder/cloudflare-funcs#readme",
+  "dependencies": {
+    "nanoid": "^5.0.6"
+  }
 }
