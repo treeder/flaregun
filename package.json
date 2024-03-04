@@ -1,0 +1,19 @@
+{
+  "name": "cloudflare",
+  "version": "0.0.1",
+  "description": "JavaScript utils for Cloudflare dev services.",
+  "main": "d1.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/treeder/cloudflare.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/treeder/cloudflare/issues"
+  },
+  "homepage": "https://github.com/treeder/cloudflare#readme"
+}
