@@ -56,6 +56,15 @@ export class D1 {
     }
 
     async insert(table, fields, values) {
+        if (fields instanceof Object) {
+            values = []
+            let f2 = []
+            for (const f in fields) {
+                f2.push(f)
+                values.push(fields[f])
+            }
+            fields = f2
+        }
         let id
         if (!fields.includes('id')) {
             id = nanoid()
@@ -79,6 +88,15 @@ export class D1 {
     }
 
     async update(table, id, fields, values) {
+        if (fields instanceof Object) {
+            values = []
+            let f2 = []
+            for (const f in fields) {
+                f2.push(f)
+                values.push(fields[f])
+            }
+            fields = f2
+        }
         fields.push('updatedAt')
         let now = new Date().toISOString()
         values.push(now)
