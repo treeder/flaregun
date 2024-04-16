@@ -56,7 +56,7 @@ export class D1 {
     }
 
     async insert(table, fields, values) {
-        if (fields instanceof Object) {
+        if (fields instanceof Object && !Array.isArray(fields)) {
             values = []
             let f2 = []
             for (const f in fields) {
@@ -88,7 +88,7 @@ export class D1 {
     }
 
     async update(table, id, fields, values) {
-        if (fields instanceof Object) {
+        if (fields instanceof Object && !Array.isArray(fields)) {
             values = []
             let f2 = []
             for (const f in fields) {
