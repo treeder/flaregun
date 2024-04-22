@@ -25,7 +25,7 @@ export class D1 {
     }
 
     prepStmt(table, q) {
-        let w = ''
+        let w = []
         let binds = []
         if (q.where) {
             let i = 0
@@ -33,26 +33,45 @@ export class D1 {
                 console.log("Q2:", q2)
                 if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
                     if (typeof q2[2] == 'undefined') continue
-                if (i > 0) w += ' AND'
-                if (q2[1] == 'in') {
-                    w += ` ${q2[0]} IN (${q2[2].map((_, i) => '?').join(',')})`
-                    binds.push(...q2[2])
+                if (i > 0) w.push(' AND')
+                if (q2[1].toLowerCase() == 'or') {
+                    let w1 = this.singleW(q2[0])
+                    let w2 = this.singleW(q2[2])
+                    w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
+                    binds.push(...w1.binds, ...w2.binds)
                 } else {
-                    w += ` ${q2[0]} ${q2[1]} ?`
-                    binds.push(q2[2])
+                    let w1 = this.singleW(q2)
+                    w.push(w1.w.join(' '))
+                    binds.push(...w1.binds)
                 }
+
                 i++
             }
         }
-        let s = "SELECT * FROM " + table + " WHERE " + w
+        let s = "SELECT * FROM " + table + " WHERE " + w.join(' ')
         if (q.order) {
             s += " ORDER BY " + q.order[0] + " " + q.order[1]
 
         }
         if (q.limit) s += " LIMIT " + q.limit
-        console.log("SQL:", s, binds)
+        // console.log("SQL:", s, binds)
         let st = this.db.prepare(s).bind(...binds)
         return st
+    }
+
+    singleW(q2) {
+        let w = []
+        let binds = []
+        if (q2[1].toLowerCase() == 'is null') {
+            w.push(` ${q2[0]} IS NULL`)
+        } else if (q2[1].toLowerCase() == 'in') {
+            w.push(` ${q2[0]} IN (${q2[2].map((_, i) => '?').join(',')})`)
+            binds.push(...q2[2])
+        } else {
+            w.push(` ${q2[0]} ${q2[1]} ?`)
+            binds.push(q2[2])
+        }
+        return { w, binds }
     }
 
     async insert(table, fields, values) {
@@ -79,7 +98,7 @@ export class D1 {
         values.push(now)
         values.push(now)
         let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
-        console.log("SQL:", s, values)
+        // console.log("SQL:", s, values)
         let st = this.db.prepare(s).bind(...this.toValues(values))
         let r = await st.run()
         let o = {}
@@ -102,7 +121,7 @@ export class D1 {
         values.push(now)
         let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
         values.push(id)
-        console.log("SQL:", s, values)
+        // console.log("SQL:", s, values)
         let st = this.db.prepare(s).bind(...this.toValues(values))
         let r = await st.run()
         let o = {}
