@@ -1,4 +1,4 @@
-export class BaselimeLoggerFetch {
+export class BaselimeLogger {
 
     constructor(options = {}) {
         this.options = options
