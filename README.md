@@ -28,7 +28,7 @@ export default {
     // console.log("fetch:", request.url)
     // console.log("ENV:", env)
     request.logger = new BaselimeLogger({
-        service: `thingster-${env.ENV}`,
+        service: `myservice-${env.ENV}`,
         // namespace: req.url,
         apiKey: env.BASELIME_API_KEY,
         ctx: ctx,
