@@ -20,7 +20,7 @@ export class BaselimeLogger {
     }
 
     async write(msgObject) {
-        console.log(msgObject)
+        // console.log(msgObject)
         //  { message: "Hello from the serverless world!", data: { userId: 'random-id' } })
         let l
         if (msgObject instanceof String) {
@@ -33,16 +33,19 @@ export class BaselimeLogger {
             l = "error"
             if (msgObject.error instanceof Error) {
                 let e = msgObject.error
-                let m = msgObject.message ? msgObject.message + ": " : ""
+                // let m = msgObject.message ? msgObject.message + ": " : ""
+                let em
                 if (e.cause) {
                     // console.log("Cause found", error.cause.stack)
-                    msgObject.message = m + e.message + (e.cause.stack ? `: ${e.cause.stack}` : "")
+                    em = (e.cause.stack ? `${e.cause.stack}` : e.cause.message)
+                } else if (e.stack) {
+                    em = (e.stack ? `${e.stack}` : "")
                 } else {
-                    msgObject.message = m + e.message + (e.stack ? `: ${e.stack}` : "")
+                    em = e.message
                 }
-                msgObject.error = msgObject.message
+                msgObject.error = em
             } else {
-                msgObject.message ||= msgObject.error
+                msgObject.message += " " + msgObject.error
             }
         }
         l = msgObject.level || msgObject.severity || l || 'info'
@@ -53,26 +56,42 @@ export class BaselimeLogger {
 
     // try to act like console.log
     log(message, ...optionalParams) {
-        // console.log("LOG:", message, optionalParams)
-        if (message instanceof Error) {
-            return this.write({ error: message, data: optionalParams })
-        }
-        message = message + " " + optionalParams.map(p => JSON.stringify(p)).join(" ")
-        return this.write({ message })
+        return this._logd2(message, optionalParams)
     }
 
     // like log, but last item can be a data map which will be sent as the "data" field in the log
     logd(message, ...optionalParams) {
-        // console.log("LOG:", message, optionalParams)
-        if (message instanceof Error) {
-            return this.write({ error: message, data: optionalParams })
-        }
         let data = null
         if (optionalParams.length > 0 && typeof optionalParams[optionalParams.length - 1] == "object") {
             data = optionalParams.pop()
         }
-        message = message + " " + optionalParams.map(p => JSON.stringify(p)).join(" ")
-        return this.write({ message, data })
+        return this._logd2(message, optionalParams, data)
+    }
+
+    _logd2(message, optionalParams, data) {
+        // console.log("LOG:", message, optionalParams)
+        console.log(message, ...optionalParams)
+        let err = null
+        for (let p of optionalParams) {
+            if (p instanceof Error) {
+                err = p
+            }
+        }
+        if (message instanceof Error) {
+            err = message
+            message = err.message
+        }
+        message = message + " " + optionalParams.map(p => {
+            console.log("p", p, typeof p)
+            if (p instanceof Error) {
+                return p.message
+            }
+            if (p instanceof Object) {
+                return JSON.stringify(p)
+            }
+            return p
+        }).join(" ")
+        return this.write({ message: message, error: err })
     }
 
     flush() {
