@@ -21,8 +21,6 @@ export class BaselimeLogger {
 
     async write(msgObject) {
         // console.log(msgObject)
-        //  { message: "Hello from the serverless world!", data: { userId: 'random-id' } })
-        let l
         if (msgObject instanceof String) {
             msgObject = { message: msgObject }
         }
@@ -30,7 +28,6 @@ export class BaselimeLogger {
             msgObject = { error: msgObject }
         }
         if (msgObject.error) {
-            l = "error"
             if (msgObject.error instanceof Error) {
                 let e = msgObject.error
                 // let m = msgObject.message ? msgObject.message + ": " : ""
@@ -48,9 +45,11 @@ export class BaselimeLogger {
                 msgObject.message += " " + msgObject.error
             }
         }
-        l = msgObject.level || msgObject.severity || l || 'info'
-        let data = msgObject.data || {}
-        data.level ||= l
+        if (msgObject.data) {
+            if (msgObject.data.duration) {
+                msgObject.duration = msgObject.data.duration
+            }
+        }
         this.promises.push(this.blFetch(msgObject))
     }
 
@@ -82,7 +81,7 @@ export class BaselimeLogger {
             message = err.message
         }
         message = message + " " + optionalParams.map(p => {
-            console.log("p", p, typeof p)
+            // console.log("p", p, typeof p)
             if (p instanceof Error) {
                 return p.message
             }
@@ -91,7 +90,15 @@ export class BaselimeLogger {
             }
             return p
         }).join(" ")
-        return this.write({ message: message, error: err })
+
+        let res = { message: message }
+        if (err) {
+            res.error = err
+        }
+        if (data) {
+            res.data = data
+        }
+        return this.write(res)
     }
 
     flush() {
