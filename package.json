@@ -1,7 +1,7 @@
 {
   "name": "cloudflare-funcs",
   "type": "module",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "JavaScript utils for Cloudflare Pages Functions.",
   "main": "d1.js",
   "scripts": {
