@@ -12,7 +12,7 @@ export class D1 {
     async query(table, q) {
         let st = this.prepStmt(table, q)
         let r = await st.all()
-        console.log("QUERY:", r)
+        // console.log("QUERY:", r)
         return r.results
     }
 
@@ -20,7 +20,7 @@ export class D1 {
         q.limit = 1
         let st = this.prepStmt(table, q)
         let r = await st.first()
-        console.log("FIRST:", r)
+        // console.log("FIRST:", r)
         return r
     }
 
@@ -30,7 +30,7 @@ export class D1 {
         if (q.where) {
             let i = 0
             for (const q2 of q.where) {
-                console.log("Q2:", q2)
+                // console.log("Q2:", q2)
                 if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
                     if (typeof q2[2] == 'undefined') continue
                 if (i > 0) w.push(' AND')
