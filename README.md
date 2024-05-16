@@ -2,20 +2,31 @@
 
 JavaScript utils for Cloudflare dev services. 
 
-## Usage
+## Install
 
 ```sh
-npm install treeder/cloudflare-funcs
+npm install treeder/flaregun
 ```
+
+## Extra database features
 
 In your workers or pages functions, initialize with the binding:
 
 ```js
-let d1 = new D1(env.D1)
+import { D1 } from 'flaregun'
 
-// then you can use the new functions:
-await d1.query(...)
-await d1.insert(...)
+// D1
+let d1 = new D1(env.D1) // just adds some extra functionality to the built in d1 interface, you can still use it just as you normally would too.
+
+// then you can use the new functions
+// insert new data
+await d1.insert('users', {name: 'Jimbo', email: 'x@y.com'})
+
+// update a row
+await d1.update('users', user.id, {name: 'Jim Bean'})
+
+// querying
+// TODO
 ```
 
 ## Logging with Baselime
@@ -23,6 +34,7 @@ await d1.insert(...)
 In order to use Baselime's request grouping, make a new logger for each request, for instance in `_worker.js` or in your function:
 
 ```js
+import { BaselimeLogger } from 'flaregun/baselime-logger.js'
 import { nanoid } from 'nanoid'
 
 export default {
