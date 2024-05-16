@@ -18,26 +18,32 @@ await d1.query(...)
 await d1.insert(...)
 ```
 
-## Logger
+## Logging with Baselime
 
 In order to use Baselime's request grouping, make a new logger for each request, for instance in `_worker.js` or in your function:
 
 ```js
+import { nanoid } from 'nanoid'
+
 export default {
-  async fetch(request, env, ctx) {
-    // console.log("fetch:", request.url)
-    // console.log("ENV:", env)
-    request.logger = new BaselimeLogger({
-        service: `myservice-${env.ENV}`,
-        // namespace: req.url,
-        apiKey: env.BASELIME_API_KEY,
-        ctx: ctx,
-        isLocalDev: env.IS_LOCAL,
-        requestId: nanoid(),
-        namespace: request.url,
-    })
-    request.logger.log("logging something")
-    ctx.waitUntil(request.logger.flush())
-  }
+    async fetch(req, env, ctx) {
+        const url = new URL(req.url)
+        req.logger = new BaselimeLogger({
+            service: `myservice-${env.ENV}`,
+            apiKey: env.BASELIME_API_KEY,
+            ctx: ctx,
+            requestId: nanoid(),
+            namespace: `${req.method} ${url.pathname}`,
+        })
+        const startTime = Date.now()
+
+        // DO STUFF HERE
+
+        let res = new Response('hello world')
+        const duration = Date.now() - startTime
+        req.logger.logd("end of request", { duration }) // to use Baselime's duration feature
+        ctx.waitUntil(req.logger.flush())
+        return res
+    },
 }
 ```
