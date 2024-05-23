@@ -97,6 +97,11 @@ export class D1 {
         let now = new Date().toISOString()
         values.push(now)
         values.push(now)
+        for (let f of fields) {
+            if (!/^[a-zA-Z0-9]+$/.test(f)) {
+                throw new Error('Field must be alphanumeric')
+            }
+        }
         let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
         // console.log("SQL:", s, values)
         let st = this.db.prepare(s).bind(...this.toValues(values))

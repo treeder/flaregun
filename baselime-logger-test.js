@@ -17,5 +17,6 @@ logger.log('1 something happened down there:', new Error('2 this is an error wit
 logger.logd('This one has some data attached', 'abc', { name: 'johnny', price: 123.45, count: 3, date: new Date() })
 logger.logd('This one has some data attached AND is an error', 'abc', new Error("something bad happened"), { name: 'johnny', price: 123.45, count: 3, date: new Date() })
 logger.logd('This has a duration', 'abc', { name: 'johnny', price: 123.45, count: 3, date: new Date(), duration: 1200 })
-
+const duration = Date.now() - (Date.now() - 3000)
+logger.logd("end of request", { duration })
 await logger.flush()
