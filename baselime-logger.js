@@ -70,6 +70,9 @@ export class BaselimeLogger {
     _logd2(message, optionalParams, data) {
         // console.log("LOG:", message, optionalParams)
         console.log(message, ...optionalParams)
+        if(this.options.isLocal){
+            return
+        }
         let err = null
         for (let p of optionalParams) {
             if (p instanceof Error) {
