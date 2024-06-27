@@ -50,7 +50,9 @@ export class BaselimeLogger {
                 msgObject.duration = msgObject.data.duration
             }
         }
-        this.promises.push(this.blFetch(msgObject))
+        let blf = this.blFetch(msgObject)
+        this.promises.push(blf)
+        return blf
     }
 
     // try to act like console.log
@@ -70,7 +72,7 @@ export class BaselimeLogger {
     _logd2(message, optionalParams, data) {
         // console.log("LOG:", message, optionalParams)
         console.log(message, ...optionalParams)
-        if(this.options.isLocal){
+        if (this.options.isLocal) {
             return
         }
         let err = null
