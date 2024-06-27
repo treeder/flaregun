@@ -1,4 +1,7 @@
-class FlareApp {
+import { nanoid } from "nanoid"
+
+class FlaregunApp {
+
     constructor(opts) {
         this.opts = opts
         this.onceCount = 0
@@ -8,43 +11,29 @@ class FlareApp {
         // console.log("fetch:", request.url)
         // console.log("ENV:", env)
         req.logger = new BaselimeLogger({
-            service: `myapp-${env.ENV}`,
+            service: `${this.opts.name || 'flaregun'}-${env.ENV || 'dev'}`,
             apiKey: env.BASELIME_API_KEY,
             ctx: ctx,
-            isLocalDev: env.IS_LOCAL,
+            isLocal: env.IS_LOCAL,
             requestId: nanoid(10),
             namespace: req.url,
         })
 
         const url = new URL(req.url)
-        if (
-            url.pathname.startsWith("/views/") ||
-            url.pathname.startsWith("/server/")
-        ) {
+        if (this.opts.private && this.opts.private.startsWith(url.pathname)) {
             return new Response("not found", { status: 404 })
         }
-        if (url.pathname.startsWith("/assets/") || url.pathname.endsWith(".map")) {
+        if (this.opts.static && this.opts.static.startsWith(url.pathname)) {
             return env.ASSETS.fetch(req)
         }
 
-        if (this.opts?.once) {
-            await once(this.opts.once, req, env, ctx)
+        if (this.opts?.init) {
+            await once(this.opts.init, req, env, ctx)
         }
-
-        let x = {
-            // 'bad query, yo': 'abc',
-            'goodField': 'abc',
-        }
-        await globals.d1.insert('test', x)
 
         let res
         try {
-            if (url.pathname.startsWith("/v1/")) {
-                // res = await api.fetch(req, env, ctx)
-            } else {
-                // res = await app.fetch(req, env, ctx)
-            }
-            return new Response("Hello world!")
+            return this.opts.routes
         } catch (e) {
             req.logger.log(e)
             res = new Response("Internal server error", { status: 500 })
@@ -57,7 +46,6 @@ class FlareApp {
         if (this.onceCount > 0) return
         req.logger.log("ONCE", this.onceCount)
         this.onceCount++
-
         try {
             await onceFunc(req, env, ctx)
         } catch (e) {

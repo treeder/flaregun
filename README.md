@@ -8,9 +8,41 @@ JavaScript utils for Cloudflare dev services.
 npm install treeder/flaregun
 ```
 
-## Extra database features
+## The big app wrapper - FlaregunApp
 
-In your workers or pages functions, initialize with the binding:
+In `_worker.js`, simply create a new FlaregunApp and you're done. 
+
+```js
+let routes = new Hono()
+routes.get('/', async (c) {
+    return c.text('Hello World!')
+})
+
+let flareApp = new FlareApp({
+    name: 'my-app',
+    env: 'dev',
+    init: initGlobals, // init function that will only run once on the first request
+    static: ['./assets'], // files or directories
+    private: ['./server', './views'],
+    routes: new Hono(),
+})
+
+EITHER LET PEOPLE PASS IN HONO object or perhaps we just add the hono methods?
+
+export default {
+    async fetch(req, env, ctx) {
+        return flareApp.fetch(req, env, ctx)
+    },
+}
+```
+
+## D1 wrapper to enhance D1 usage
+
+The D1 class wraps a D1 binding and adds some extra functionality. 
+
+* Generates and inserts unique `id`
+* Sets createdAt and updatedAt fields
+* Accepts objects to insert or update, instead of having to generate SQL and bind values. 
 
 ```js
 import { D1 } from 'flaregun'
@@ -20,7 +52,7 @@ let d1 = new D1(env.D1) // just adds some extra functionality to the built in d1
 
 // then you can use the new functions
 // insert new data
-await d1.insert('users', {name: 'Jimbo', email: 'x@y.com'})
+await d1.insert('users', { name: 'Jimbo', email: 'x@y.com' })
 
 // update a row
 await d1.update('users', user.id, {name: 'Jim Bean'})
