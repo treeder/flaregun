@@ -93,6 +93,9 @@ export class BaselimeLogger {
             if (p instanceof Object) {
                 return JSON.stringify(p)
             }
+            if (typeof p == "object") {
+                return JSON.stringify(p)
+            }
             return p
         }).join(" ")
 
