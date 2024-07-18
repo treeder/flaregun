@@ -3,11 +3,20 @@ export class BaselimeLogger {
     constructor(options = {}) {
         this.options = options
         this.promises = []
+        this.messages = []
     }
 
     async blFetch(data = {}) {
-        data.requestId = this.options.requestId
-        data.namespace = this.options.namespace
+        if (Array.isArray(data)) {
+            for (let d of data) {
+                d.requestId = this.options.requestId
+                d.namespace = this.options.namespace
+            }
+        } else {
+            // single message
+            data.requestId = this.options.requestId
+            data.namespace = this.options.namespace
+        }
         return await fetch('https://events.baselime.io/v1/logs', {
             method: 'POST',
             headers: {
@@ -50,9 +59,11 @@ export class BaselimeLogger {
                 msgObject.duration = msgObject.data.duration
             }
         }
-        let blf = this.blFetch(msgObject)
-        this.promises.push(blf)
-        return blf
+        // let blf = this.blFetch(msgObject)
+        // this.promises.push(blf)
+        // return blf
+        this.messages.push(msgObject)
+        return
     }
 
     // try to act like console.log
@@ -109,7 +120,11 @@ export class BaselimeLogger {
         return this.write(res)
     }
 
-    flush() {
-        return Promise.allSettled(this.promises)
+    async flush() {
+        if (this.messages && this.messages.length > 0) {
+            return await this.blFetch(this.messages)
+        } else {
+            return Promise.allSettled(this.promises)
+        }
     }
 }

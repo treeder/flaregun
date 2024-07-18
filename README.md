@@ -31,6 +31,8 @@ await d1.update('users', user.id, {name: 'Jim Bean'})
 
 ## Logging with Baselime
 
+You will need to set a `BASELIME_API_KEY` environment variable.
+
 In order to use Baselime's request grouping, make a new logger for each request, for instance in `_worker.js` or in your function:
 
 ```js
