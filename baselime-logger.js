@@ -59,6 +59,8 @@ export class BaselimeLogger {
                 msgObject.duration = msgObject.data.duration
             }
         }
+        // we'll add timestamp here, otherwise the entire batch will have the exact same timestamp
+        msgObject.timestamp = new Date()
         // let blf = this.blFetch(msgObject)
         // this.promises.push(blf)
         // return blf
