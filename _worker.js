@@ -25,7 +25,7 @@ export default {
             service: `myapp-${env.ENV}`,
             apiKey: env.BASELIME_API_KEY,
             ctx: ctx,
-            isLocalDev: env.IS_LOCAL,
+            isLocal: env.IS_LOCAL,
             requestId: nanoid(10),
             namespace: req.url,
         })

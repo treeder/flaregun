@@ -48,12 +48,14 @@ export default {
             ctx: ctx,
             requestId: nanoid(),
             namespace: `${req.method} ${url.pathname}`,
+            isLocal: env.IS_LOCAL, // this will print to console.log, but not send logs to Baselime
         })
         const startTime = Date.now()
 
         // DO STUFF HERE
-
         let res = new Response('hello world')
+        
+        // Then flush the logs
         const duration = Date.now() - startTime
         req.logger.logd("end of request", { duration }) // to use Baselime's duration feature
         ctx.waitUntil(req.logger.flush())

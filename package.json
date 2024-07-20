@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/treeder/cloudflare-funcs.git"
+    "url": "git+https://github.com/treeder/flaregun.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/treeder/cloudflare-funcs/issues"
+    "url": "https://github.com/treeder/flaregun/issues"
   },
-  "homepage": "https://github.com/treeder/cloudflare-funcs#readme",
+  "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
     "nanoid": "^5.0.6"
   }
