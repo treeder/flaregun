@@ -92,11 +92,15 @@ export class D1 {
         } else {
             id = values[fields.indexOf('id')]
         }
-        fields.push('createdAt')
-        fields.push('updatedAt')
         let now = new Date().toISOString()
-        values.push(now)
-        values.push(now)
+        if (!fields.includes('createdAt')) {
+            fields.push('createdAt')
+            values.push(now)
+        }
+        if (!fields.includes('updatedAt')) {
+            fields.push('updatedAt')
+            values.push(now)
+        }
         for (let f of fields) {
             if (!/^[a-zA-Z0-9]+$/.test(f)) {
                 throw new Error('Field must be alphanumeric')
@@ -120,10 +124,11 @@ export class D1 {
                 values.push(fields[f])
             }
             fields = f2
+        } if (!fields.includes('updatedAt')) {
+            fields.push('updatedAt')
+            let now = new Date().toISOString()
+            values.push(now)
         }
-        fields.push('updatedAt')
-        let now = new Date().toISOString()
-        values.push(now)
         let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
         values.push(id)
         // console.log("SQL:", s, values)
@@ -136,6 +141,8 @@ export class D1 {
 
     toValues(values) {
         return values.map(v => {
+            if (v == null) return null
+            if (v instanceof Date) return v.toISOString()
             if (typeof v == 'undefined') return null
             if (typeof v == 'object') return JSON.stringify(v)
             if (typeof v == 'boolean') return v ? 1 : 0
