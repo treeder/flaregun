@@ -124,11 +124,10 @@ export class D1 {
                 values.push(fields[f])
             }
             fields = f2
-        } if (!fields.includes('updatedAt')) {
-            fields.push('updatedAt')
-            let now = new Date().toISOString()
-            values.push(now)
-        }
+        } 
+        fields.push('updatedAt')
+        let now = new Date().toISOString()
+        values.push(now)
         let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
         values.push(id)
         // console.log("SQL:", s, values)
