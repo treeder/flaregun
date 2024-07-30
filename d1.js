@@ -120,6 +120,9 @@ export class D1 {
             values = []
             let f2 = []
             for (const f in fields) {
+                if (f == 'id') continue
+                if (f == 'createdAt') continue // skip, already set on create
+                if (f == 'updatedAt') continue // skip, we'll set below
                 f2.push(f)
                 values.push(fields[f])
             }
