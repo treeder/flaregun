@@ -66,10 +66,10 @@ export class D1 {
             w.push(` ${q2[0]} IS NULL`)
         } else if (q2[1].toLowerCase() == 'in') {
             w.push(` ${q2[0]} IN (${q2[2].map((_, i) => '?').join(',')})`)
-            binds.push(...q2[2])
+            binds.push(...this.toValues(q2[2]))
         } else {
             w.push(` ${q2[0]} ${q2[1]} ?`)
-            binds.push(q2[2])
+            binds.push(this.toValue(q2[2]))
         }
         return { w, binds }
     }
@@ -124,7 +124,7 @@ export class D1 {
                 values.push(fields[f])
             }
             fields = f2
-        } 
+        }
         fields.push('updatedAt')
         let now = new Date().toISOString()
         values.push(now)
@@ -140,13 +140,16 @@ export class D1 {
 
     toValues(values) {
         return values.map(v => {
-            if (v == null) return null
-            if (v instanceof Date) return v.toISOString()
-            if (typeof v == 'undefined') return null
-            if (typeof v == 'object') return JSON.stringify(v)
-            if (typeof v == 'boolean') return v ? 1 : 0
-            return v
+            return this.toValue(v)
         })
     }
 
+    toValue(v) {
+        if (v == null) return null
+        if (v instanceof Date) return v.toISOString()
+        if (typeof v == 'undefined') return null
+        if (typeof v == 'object') return JSON.stringify(v)
+        if (typeof v == 'boolean') return v ? 1 : 0
+        return v
+    }
 }
