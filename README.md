@@ -26,7 +26,9 @@ await d1.insert('users', {name: 'Jimbo', email: 'x@y.com'})
 await d1.update('users', user.id, {name: 'Jim Bean'})
 
 // querying
-// TODO
+let users = await globals.d1.query('users', {
+    where: [['orgID', '==', orgID], ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
+})
 ```
 
 ## Logging with Baselime
