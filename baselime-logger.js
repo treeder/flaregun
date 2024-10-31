@@ -70,14 +70,16 @@ export class BaselimeLogger {
 
     // try to act like console.log
     log(message, ...optionalParams) {
-        return this._logd2(message, optionalParams)
+        // Just making them behave the same now.
+        return this.logd(message, optionalParams)
     }
 
     // like log, but last item can be a data map which will be sent as the "data" field in the log
     logd(message, ...optionalParams) {
         let data = null
         if (optionalParams.length > 0 && typeof optionalParams[optionalParams.length - 1] == "object") {
-            data = optionalParams.pop()
+            // data = optionalParams.pop()
+            data = optionalParams[optionalParams.length - 1]
         }
         return this._logd2(message, optionalParams, data)
     }
