@@ -25,7 +25,7 @@ export class D1 {
   }
 
   prepStmt(table, q) {
-    console.log("stmt", q)
+    // console.log("stmt", q)
     let s = "SELECT * FROM " + table
     let w = []
     let binds = []
@@ -56,7 +56,7 @@ export class D1 {
 
     }
     if (q.limit) s += " LIMIT " + q.limit
-    console.log("SQL:", s, binds)
+    // console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
