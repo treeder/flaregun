@@ -53,10 +53,10 @@ export class D1 {
     }
     if (q.order) {
       s += " ORDER BY " + q.order[0] + " " + q.order[1]
-
     }
     if (q.limit) s += " LIMIT " + q.limit
-    // console.log("SQL:", s, binds)
+    if (q.offset) s += " OFFSET " + q.offset
+    console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
