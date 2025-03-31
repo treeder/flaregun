@@ -8,6 +8,10 @@ export class D1 {
   prepare(s) {
     return this.db.prepare(s)
   }
+  
+  async get(table, id) {
+    return this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
+  }
 
   async query(table, q) {
     let st = this.prepStmt(table, q)
