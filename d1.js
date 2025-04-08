@@ -97,6 +97,8 @@ export class D1 {
       values.push(id)
     } else {
       id = values[fields.indexOf('id')]
+      if(!id) id = nanoid()
+      values[fields.indexOf('id')] = id
     }
     let now = new Date().toISOString()
     if (!fields.includes('createdAt')) {
