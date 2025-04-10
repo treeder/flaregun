@@ -81,7 +81,9 @@ export class D1 {
   }
 
   async insert(table, fields, values) {
+    let ob = null
     if (fields instanceof Object && !Array.isArray(fields)) {
+      ob = fields
       values = []
       let f2 = []
       for (const f in fields) {
@@ -95,19 +97,25 @@ export class D1 {
       id = nanoid()
       fields.push('id')
       values.push(id)
+      ob.id = id
     } else {
       id = values[fields.indexOf('id')]
-      if(!id) id = nanoid()
-      values[fields.indexOf('id')] = id
+      if (!id) {
+        id = nanoid()
+        values[fields.indexOf('id')] = id
+        ob.id = id
+      }
     }
     let now = new Date().toISOString()
     if (!fields.includes('createdAt')) {
       fields.push('createdAt')
       values.push(now)
+      ob.createdAt = now
     }
     if (!fields.includes('updatedAt')) {
       fields.push('updatedAt')
       values.push(now)
+      ob.updatedAt = now
     }
     for (let f of fields) {
       if (!/^[a-zA-Z0-9]+$/.test(f)) {
@@ -118,13 +126,15 @@ export class D1 {
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
-    let o = {}
-    fields.forEach((f, i) => o[f] = values[i])
-    return { id: id, response: r, object: o }
+    // let o = {}
+    // fields.forEach((f, i) => o[f] = values[i])
+    return { id: id, response: r, object: ob }
   }
 
   async update(table, id, fields, values) {
+    let ob = null
     if (fields instanceof Object && !Array.isArray(fields)) {
+      ob = fields
       values = []
       let f2 = []
       for (const f in fields) {
@@ -136,17 +146,18 @@ export class D1 {
       }
       fields = f2
     }
-    fields.push('updatedAt')
     let now = new Date().toISOString()
+    fields.push('updatedAt')
     values.push(now)
+    ob.updatedAt = now
     let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
     values.push(id)
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
-    let o = {}
-    fields.forEach((f, i) => o[f] = values[i])
-    return { id: id, response: r, object: o }
+    // let o = {}
+    // fields.forEach((f, i) => o[f] = values[i])
+    return { id: id, response: r, object: ob }
   }
 
   toValues(values) {
