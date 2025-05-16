@@ -8,7 +8,7 @@ export class D1 {
   prepare(s) {
     return this.db.prepare(s)
   }
-  
+
   async get(table, id) {
     return this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
   }
@@ -28,7 +28,7 @@ export class D1 {
     return r
   }
 
-  prepStmt(table, q={}) {
+  prepStmt(table, q = {}) {
     // console.log("stmt", q)
     let s = "SELECT * FROM " + table
     let w = []
@@ -60,7 +60,7 @@ export class D1 {
     }
     if (q.limit) s += " LIMIT " + q.limit
     if (q.offset) s += " OFFSET " + q.offset
-    console.log("SQL:", s, binds)
+    // console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
@@ -68,13 +68,19 @@ export class D1 {
   singleW(q2) {
     let w = []
     let binds = []
+    let q0 = q2[0]
+    if (q2[0].includes('.')) { // then it's a path into a json object
+      // json_extract(data, '$.sgo.teamID')
+      let split = q2[0].split('.')
+      q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
+    }
     if (q2[1].toLowerCase() == 'is null') {
-      w.push(` ${q2[0]} IS NULL`)
+      w.push(` ${q0} IS NULL`)
     } else if (q2[1].toLowerCase() == 'in') {
-      w.push(` ${q2[0]} IN (${q2[2].map((_, i) => '?').join(',')})`)
+      w.push(` ${q0} IN (${q2[2].map((_, i) => '?').join(',')})`)
       binds.push(...this.toValues(q2[2]))
     } else {
-      w.push(` ${q2[0]} ${q2[1]} ?`)
+      w.push(` ${q0} ${q2[1]} ?`)
       binds.push(this.toValue(q2[2]))
     }
     return { w, binds }
