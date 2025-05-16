@@ -28,7 +28,7 @@ export class D1 {
     return r
   }
 
-  prepStmt(table, q) {
+  prepStmt(table, q={}) {
     // console.log("stmt", q)
     let s = "SELECT * FROM " + table
     let w = []
