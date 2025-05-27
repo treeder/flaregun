@@ -69,8 +69,8 @@ export class D1 {
     let w = []
     let binds = []
     let q0 = q2[0]
-    if (q2[0].includes('.')) { // then it's a path into a json object
-      // json_extract(data, '$.sgo.teamID')
+    if (q2[0].includes('.') && !(q2[0].includes('$') || q2[0].includes('('))) {
+      // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
       let split = q2[0].split('.')
       q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
     }
