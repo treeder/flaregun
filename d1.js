@@ -10,7 +10,11 @@ export class D1 {
   }
 
   async get(table, id) {
-    return this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
+    return await this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
+  }
+
+  async delete(table, id) {
+    return await this.db.prepare(`DELETE FROM ${table} where id = ?`).bind(id).run()
   }
 
   async query(table, q) {
