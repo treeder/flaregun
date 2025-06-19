@@ -8,7 +8,9 @@ JavaScript utils for Cloudflare dev services.
 npm install treeder/flaregun
 ```
 
-## Extra database features
+## D1 features
+
+This handles inserting and updating objects, assigning IDs, nested JSON objects, etc. 
 
 In your workers or pages functions, initialize with the binding:
 
