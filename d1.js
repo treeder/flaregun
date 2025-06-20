@@ -9,8 +9,10 @@ export class D1 {
     return this.db.prepare(s)
   }
 
-  async get(table, id) {
-    return await this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
+  async get(table, id, q = {}) {
+    let r = await this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
+    this.parseProperties(r, q.model)
+    return r
   }
 
   async delete(table, id) {
@@ -21,6 +23,11 @@ export class D1 {
     let st = this.prepStmt(table, q)
     let r = await st.all()
     // console.log("QUERY:", r)
+    if (q.model) {
+      for (let r2 of r.results) {
+        this.parseProperties(r2, q.model)
+      }
+    }
     return r.results
   }
 
@@ -29,6 +36,7 @@ export class D1 {
     let st = this.prepStmt(table, q)
     let r = await st.first()
     // console.log("FIRST:", r)
+    this.parseProperties(r, q.model)
     return r
   }
 
@@ -183,5 +191,36 @@ export class D1 {
     if (typeof v == 'object') return JSON.stringify(v)
     if (typeof v == 'boolean') return v ? 1 : 0
     return v
+  }
+
+  parseProperties(ob, clz) {
+    if (!clz || !clz.properties) return
+    for (const prop in clz.properties) {
+      if (!ob[prop]) continue
+      let p = clz.properties[prop]
+      ob[prop] = this.parseProp(ob[prop], p)
+    }
+  }
+  parseProp(val, p) {
+    switch (p.type) {
+      case Number:
+        // todo: let user pass in a parser if they want ot use Big.js or something, eg: p.parse() or something
+        return new Number(val)
+      case Boolean:
+        return val == 1
+      case Date:
+        return new Date(val)
+      case BigInt:
+        return new BigInt(val)
+      case Object:
+        return JSON.parse(val)
+      case Array:
+        return JSON.parse(val)
+      case JSON:
+        return JSON.parse(val)
+      default:
+        return val
+    }
+
   }
 }
