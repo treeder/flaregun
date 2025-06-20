@@ -1,0 +1,44 @@
+{
+    "name": "flaregun",
+    "compatibility_date": "2025-06-01",
+    "main": "./dist/index.js",
+    "assets": {
+      "directory": "./public/",
+      "binding": "ASSETS"
+      //  "not_found_handling": "404-page"
+    },
+    "env": {
+      "dev": {
+        "vars": {
+          "ENV": "dev"
+        },
+        "kv_namespaces": [
+          {
+            "binding": "KV",
+            "id": "flaregun-dev"
+          }
+        ],
+        "d1_databases": [
+          {
+            "binding": "D1",
+            "database_name": "flaregun-dev",
+            "database_id": "flaregun-dev"
+          }
+        ],
+        "r2_buckets": [
+          {
+            "binding": "R2",
+            "bucket_name": "flaregun-dev"
+          }
+        ]
+      },
+      "prod": {
+        "vars": {
+          "ENV": "prod"
+        }
+      }
+    },
+    "placement": {
+      "mode": "smart"
+    }
+  }

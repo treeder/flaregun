@@ -37,3 +37,7 @@ let users = await d1.query('users', {
   where: [['data.awesome', '=', true]],
 }
 ```
+
+## Starter kit
+
+Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
