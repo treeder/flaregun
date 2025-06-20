@@ -4,11 +4,11 @@ import { nanoid } from 'nanoid'
 let env = process.env
 
 let logger = new BaselimeLogger({
-    apiKey: env.BASELIME_API_KEY,
-    service: `flaregun`,
-    // ctx: ctx,
-    requestId: nanoid(),
-    namespace: 'baselime-logger-test.js',
+  apiKey: env.BASELIME_API_KEY,
+  service: `flaregun`,
+  // ctx: ctx,
+  requestId: nanoid(),
+  namespace: 'baselime-logger-test.js',
 })
 
 let start = Date.now()
