@@ -1,7 +1,7 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "0.0.45",
+  "version": "0.0.46",
   "description": "JavaScript utils for Cloudflare Pages Functions.",
   "main": "d1.js",
   "scripts": {
