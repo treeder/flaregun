@@ -45,6 +45,12 @@ export function header(d) {
 
 </head>
 <body>
+<div class="flex g12 jcsb mb20">
+  <div class="flex g8 jcc aic">
+    <img src="/images/flaregun2.png" style="height: 40px;">
+    <div class="title-large">Flaregun Starter Kit</div>
+  </div>
+</div>
 `
 }
 

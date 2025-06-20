@@ -22,16 +22,16 @@ export class ProductForm extends LitElement {
 
   render() {
     return html`
-      <h2>Product Form</h2>
-      <p>This is a placeholder for the product form.</p>
-      <form id="product-form">
+    <form id="product-form">
       <div class="flex col g16">
+        <div class="headline-medium">Product Form</div>
+        <div>This is a placeholder for the product form.</div>
         <md-outlined-text-field id="name" label="Name" value="${this.product.name}" required></md-outlined-text-field>
         <md-outlined-text-field id="description" label="Description" value="${this.product.description}"></md-outlined-text-field>
         <md-outlined-text-field id="price" label="Price" value="${this.product.price}" required type="number" placeholder="1.0" step="0.01" min="1" max="1000000"></md-outlined-text-field>
         <md-filled-button type="button" @click=${this.submit}>Save</md-filled-button>          
       </div>
-      </form>
+    </form>
     `
   }
 

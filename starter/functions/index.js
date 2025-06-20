@@ -22,10 +22,13 @@ function render(d) {
       <product-form></product-form>
     </div>
     <div>
-      <div class="headline-large">Products</div>
+      <div class="headline-medium">Products</div>
     </div>
-    <div class="flex g12">
-      ${d.products.map(p => html`<div>${p.name}</div><div>${p.description}</div><div>${p.price}</div>`)}
+    <div class="flex col g12">
+      ${d.products.map(p => html`
+        <div class="flex g12">
+        <div>${p.name}</div><div>${p.description}</div><div>${p.price}</div>
+        </div>`)}
     </div>
   </div>
   `
