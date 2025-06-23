@@ -201,8 +201,9 @@ export class D1 {
       ob[prop] = this.parseProp(ob[prop], p)
     }
   }
+
   parseProp(val, p) {
-    if (!val) return val
+    if (!val || !p) return val
     switch (p.type) {
       case Number:
         // return "NUMERIC"
