@@ -1,5 +1,10 @@
 import { verifyIdToken, getAccessToken } from "web-auth-library/google"
 
+/**
+ * Logger for posting to Google Cloud logging. 
+ * 
+ * TODO: move to separate repo like console-logger.
+ */
 export class GoogleLogger {
 
   constructor(options = {}) {
