@@ -1,6 +1,6 @@
-# cloudflare
+# Flarefun
 
-JavaScript utils for Cloudflare dev services. 
+JavaScript helpers for Cloudflare dev services. 
 
 ## Install
 
