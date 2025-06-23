@@ -8,11 +8,13 @@ JavaScript utils for Cloudflare dev services.
 npm install treeder/flaregun
 ```
 
+## Starter kit
+
+Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
+
 ## D1 features
 
 This handles inserting and updating objects, assigning IDs, nested JSON objects, etc. 
-
-In your workers or pages functions, initialize with the binding:
 
 ```js
 import { D1 } from 'flaregun'
@@ -38,6 +40,38 @@ let users = await d1.query('users', {
 }
 ```
 
-## Starter kit
+### Properties
 
-Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
+This is optional, but will help with parsing data after querying. 
+
+```js
+// First define your models as classes:
+export class Product {
+  static properties = {
+    id: {
+      type: String,
+      primaryKey: true,
+    },
+    createdAt: {
+      type: Date,
+    },
+    name: {
+      type: String,
+    },
+    price: {
+      type: Number,
+    },
+    data: {
+      type: Object, // will treat as JSON
+    }
+  }
+}
+```
+
+Then when querying:
+
+```js
+await d1.query('products', {
+  model: Product,
+})
+```
