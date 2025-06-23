@@ -202,9 +202,11 @@ export class D1 {
     }
   }
   parseProp(val, p) {
+    if (!val) return val
     switch (p.type) {
       case Number:
-        // todo: let user pass in a parser if they want ot use Big.js or something, eg: p.parse() or something
+        // return "NUMERIC"
+        // todo: parse as number or let user pass in a parser if they want ot use Big.js or something
         return new Number(val)
       case Boolean:
         return val == 1
@@ -214,9 +216,9 @@ export class D1 {
         return new BigInt(val)
       case Object:
         return JSON.parse(val)
-      case Array:
-        return JSON.parse(val)
       case JSON:
+        return JSON.parse(val)
+      case Array:
         return JSON.parse(val)
       default:
         return val
