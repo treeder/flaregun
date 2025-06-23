@@ -1,4 +1,4 @@
-# Flarefun
+# Flaregun
 
 JavaScript helpers for Cloudflare dev services. 
 
@@ -12,7 +12,7 @@ npm install treeder/flaregun
 
 Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
 
-## D1 features
+## D1 Sqlite Database
 
 This handles inserting and updating objects, assigning IDs, nested JSON objects, etc. 
 
