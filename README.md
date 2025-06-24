@@ -1,6 +1,6 @@
 # Flaregun
 
-JavaScript helpers for Cloudflare dev services. 
+JavaScript helpers for Cloudflare dev services.
 
 ## Install
 
@@ -10,11 +10,11 @@ npm install treeder/flaregun
 
 ## Starter kit
 
-Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
+Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app.
 
 ## D1 Sqlite Database
 
-This handles inserting and updating objects, assigning IDs, nested JSON objects, etc. 
+This handles inserting and updating objects, assigning IDs, nested JSON objects, etc.
 
 ```js
 import { D1 } from 'flaregun'
@@ -42,27 +42,25 @@ let users = await d1.query('users', {
 
 ### Properties
 
-This is optional, but will help with parsing data after querying. 
+This is optional, but will help with parsing data after querying.
 
 ```js
 // First define your models as classes:
 export class Product {
   static properties = {
     id: {
-      type: String,
       primaryKey: true,
     },
     createdAt: {
-      type: Date,
+      cast: (v) => new Date(v),
     },
     name: {
-      type: String,
     },
     price: {
-      type: Number,
+      cast: parseFloat,
     },
     data: {
-      type: Object, // will treat as JSON
+      cast: JSON.parse, // will parse JSON string to object
     }
   }
 }

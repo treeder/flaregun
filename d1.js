@@ -49,23 +49,23 @@ export class D1 {
       let i = 0
       for (const q2 of q.where) {
         // console.log("Q2:", q2)
-        if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
-          if (typeof q2[2] == 'undefined') continue
-        if (i > 0) w.push(' AND')
-        if (q2[1].toLowerCase() == 'or') {
+        if (q2[1].toLowerCase() == "IS NOT NULL".toLowerCase())
+          if (typeof q2[2] == "undefined") continue
+        if (i > 0) w.push(" AND")
+        if (q2[1].toLowerCase() == "or") {
           let w1 = this.singleW(q2[0])
           let w2 = this.singleW(q2[2])
-          w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
+          w.push(`(${w1.w.join(" ")} OR ${w2.w.join(" ")})`)
           binds.push(...w1.binds, ...w2.binds)
         } else {
           let w1 = this.singleW(q2)
-          w.push(w1.w.join(' '))
+          w.push(w1.w.join(" "))
           binds.push(...w1.binds)
         }
 
         i++
       }
-      s += " WHERE " + w.join(' ')
+      s += " WHERE " + w.join(" ")
     }
     if (q.order) {
       s += " ORDER BY " + q.order[0] + " " + q.order[1]
@@ -81,15 +81,15 @@ export class D1 {
     let w = []
     let binds = []
     let q0 = q2[0]
-    if (q2[0].includes('.') && !(q2[0].includes('$') || q2[0].includes('('))) {
+    if (q2[0].includes(".") && !(q2[0].includes("$") || q2[0].includes("("))) {
       // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
-      let split = q2[0].split('.')
-      q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
+      let split = q2[0].split(".")
+      q0 = `json_extract(${split[0]}, '$.${split.slice(1).join(".")}')`
     }
-    if (q2[1].toLowerCase() == 'is null') {
+    if (q2[1].toLowerCase() == "is null") {
       w.push(` ${q0} IS NULL`)
-    } else if (q2[1].toLowerCase() == 'in') {
-      w.push(` ${q0} IN (${q2[2].map((_, i) => '?').join(',')})`)
+    } else if (q2[1].toLowerCase() == "in") {
+      w.push(` ${q0} IN (${q2[2].map((_, i) => "?").join(",")})`)
       binds.push(...this.toValues(q2[2]))
     } else {
       w.push(` ${q0} ${q2[1]} ?`)
@@ -111,36 +111,38 @@ export class D1 {
       fields = f2
     }
     let id
-    if (!fields.includes('id')) {
+    if (!fields.includes("id")) {
       id = nanoid()
-      fields.push('id')
+      fields.push("id")
       values.push(id)
       ob.id = id
     } else {
-      id = values[fields.indexOf('id')]
+      id = values[fields.indexOf("id")]
       if (!id) {
         id = nanoid()
-        values[fields.indexOf('id')] = id
+        values[fields.indexOf("id")] = id
         ob.id = id
       }
     }
     let now = new Date().toISOString()
-    if (!fields.includes('createdAt')) {
-      fields.push('createdAt')
+    if (!fields.includes("createdAt")) {
+      fields.push("createdAt")
       values.push(now)
       ob.createdAt = now
     }
-    if (!fields.includes('updatedAt')) {
-      fields.push('updatedAt')
+    if (!fields.includes("updatedAt")) {
+      fields.push("updatedAt")
       values.push(now)
       ob.updatedAt = now
     }
     for (let f of fields) {
       if (!/^[a-zA-Z0-9]+$/.test(f)) {
-        throw new Error('Field must be alphanumeric')
+        throw new Error("Field must be alphanumeric")
       }
     }
-    let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
+    let s = `INSERT INTO ${table} (${fields.join(",")}) VALUES (${fields
+      .map((f) => "?")
+      .join(",")})`
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
@@ -156,19 +158,19 @@ export class D1 {
       values = []
       let f2 = []
       for (const f in fields) {
-        if (f == 'id') continue
-        if (f == 'createdAt') continue // skip, already set on create
-        if (f == 'updatedAt') continue // skip, we'll set below
+        if (f == "id") continue
+        if (f == "createdAt") continue // skip, already set on create
+        if (f == "updatedAt") continue // skip, we'll set below
         f2.push(f)
         values.push(fields[f])
       }
       fields = f2
     }
     let now = new Date().toISOString()
-    fields.push('updatedAt')
+    fields.push("updatedAt")
     values.push(now)
     ob.updatedAt = now
-    let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
+    let s = `UPDATE ${table} SET ${fields.map((f) => f + " = ?").join(",")} WHERE id = ?`
     values.push(id)
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
@@ -179,7 +181,7 @@ export class D1 {
   }
 
   toValues(values) {
-    return values.map(v => {
+    return values.map((v) => {
       return this.toValue(v)
     })
   }
@@ -187,9 +189,9 @@ export class D1 {
   toValue(v) {
     if (v == null) return null
     if (v instanceof Date) return v.toISOString()
-    if (typeof v == 'undefined') return null
-    if (typeof v == 'object') return JSON.stringify(v)
-    if (typeof v == 'boolean') return v ? 1 : 0
+    if (typeof v == "undefined") return null
+    if (typeof v == "object") return JSON.stringify(v)
+    if (typeof v == "boolean") return v ? 1 : 0
     return v
   }
 
@@ -203,27 +205,7 @@ export class D1 {
   }
 
   parseProp(val, p) {
-    if (!val || !p) return val
-    switch (p.type) {
-      case Number:
-        // return "NUMERIC"
-        // todo: parse as number or let user pass in a parser if they want ot use Big.js or something
-        return new Number(val)
-      case Boolean:
-        return val == 1
-      case Date:
-        return new Date(val)
-      case BigInt:
-        return new BigInt(val)
-      case Object:
-        return JSON.parse(val)
-      case JSON:
-        return JSON.parse(val)
-      case Array:
-        return JSON.parse(val)
-      default:
-        return val
-    }
-
+    if (!val || !p || !p.cast) return val
+    return p.cast(val)
   }
 }
