@@ -181,9 +181,7 @@ export class D1 {
   }
 
   toValues(values) {
-    return values.map((v) => {
-      return this.toValue(v)
-    })
+    return values.map(this.toValue)
   }
 
   toValue(v) {
