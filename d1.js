@@ -45,27 +45,39 @@ export class D1 {
     let s = "SELECT * FROM " + table
     let w = []
     let binds = []
-    if (q.where && q.where.length > 0) {
-      let i = 0
-      for (const q2 of q.where) {
-        // console.log("Q2:", q2)
-        if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
-          if (typeof q2[2] == 'undefined') continue
-        if (i > 0) w.push(' AND')
-        if (q2[1].toLowerCase() == 'or') {
-          let w1 = this.singleW(q2[0])
-          let w2 = this.singleW(q2[2])
-          w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
-          binds.push(...w1.binds, ...w2.binds)
-        } else {
-          let w1 = this.singleW(q2)
-          w.push(w1.w.join(' '))
-          binds.push(...w1.binds)
+    if (q.where) {
+      if (Array.isArray(q.where)) {
+        if (q.where && q.where.length > 0) {
+          let i = 0
+          for (const q2 of q.where) {
+            // console.log("Q2:", q2)
+            if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
+              if (typeof q2[2] == 'undefined') continue
+            if (i > 0) w.push(' AND')
+            if (q2[1].toLowerCase() == 'or') {
+              let w1 = this.singleW(q2[0])
+              let w2 = this.singleW(q2[2])
+              w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
+              binds.push(...w1.binds, ...w2.binds)
+            } else {
+              let w1 = this.singleW(q2)
+              w.push(w1.w.join(' '))
+              binds.push(...w1.binds)
+            }
+            i++
+          }
         }
-
-        i++
+      } else if (typeof q.where === 'object') {
+        // if where is an object, then just exact match
+        for (const q2 in q.where) {
+          // console.log("Q2:", q2)
+          w.push(`${q2} = ?`)
+          binds.push(q.where[q2])
+        }
+      } else {
+        throw new Error("Unknown type for 'where', must be an array or object")
       }
-      s += " WHERE " + w.join(' ')
+      if (w.length > 0) s += " WHERE " + w.join(' ')
     }
     if (q.order) {
       s += " ORDER BY " + q.order[0] + " " + q.order[1]
