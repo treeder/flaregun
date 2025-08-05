@@ -69,10 +69,13 @@ export class D1 {
         }
       } else if (typeof q.where === 'object') {
         // if where is an object, then just exact match
+        let i = 0
         for (const q2 in q.where) {
           // console.log("Q2:", q2)
+          if (i > 0) w.push(' AND')
           w.push(`${q2} = ?`)
           binds.push(q.where[q2])
+          i++
         }
       } else {
         throw new Error("Unknown type for 'where', must be an array or object")
