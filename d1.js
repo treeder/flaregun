@@ -209,6 +209,7 @@ export class D1 {
   }
 
   parseProperties(ob, clz) {
+    if (!ob) return
     if (!clz || !clz.properties) return
     for (const prop in clz.properties) {
       if (!ob[prop]) continue
