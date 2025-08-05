@@ -69,10 +69,13 @@ export class D1 {
         }
       } else if (typeof q.where === 'object') {
         // if where is an object, then just exact match
+        let i = 0
         for (const q2 in q.where) {
           // console.log("Q2:", q2)
+          if (i > 0) w.push(' AND')
           w.push(`${q2} = ?`)
           binds.push(q.where[q2])
+          i++
         }
       } else {
         throw new Error("Unknown type for 'where', must be an array or object")
@@ -84,7 +87,7 @@ export class D1 {
     }
     if (q.limit) s += " LIMIT " + q.limit
     if (q.offset) s += " OFFSET " + q.offset
-    // console.log("SQL:", s, binds)
+    console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
@@ -153,7 +156,7 @@ export class D1 {
       }
     }
     let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
-    // console.log("SQL:", s, values)
+    console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
     // let o = {}
