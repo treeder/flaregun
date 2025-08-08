@@ -113,7 +113,7 @@ export class D1 {
     return { w, binds }
   }
 
-  async insert(table, obj, opts={}) {
+  async insert(table, obj, opts = {}) {
     let ob = null
     let fields = []
     let values = []
@@ -165,14 +165,14 @@ export class D1 {
     }
     let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
     // console.log("SQL:", s, values)
-    let st = this.db.prepare(s).bind(...this.toValues(fields, values, opts))
+    let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
   }
 
-  async update(table, id, obj, opts={}) {
+  async update(table, id, obj, opts = {}) {
     let ob = null
     let fields = []
     let values = []
@@ -201,9 +201,9 @@ export class D1 {
     ob.updatedAt = now
     // let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ' + this.valueWrap(f, opts)).join(',')} WHERE id = ?`
     let s = `UPDATE ${table} SET ${this.toFields(fields, values, opts)} WHERE id = ?`
-    let vs = this.toValues(fields, values, opts)
+    let vs = this.toValues(values)
     vs.push(id)
-    console.log("SQL:", s, vs)
+    // console.log("SQL:", s, vs)
     let st = this.db.prepare(s).bind(...vs)
     let r = await st.run()
     // let o = {}
@@ -212,49 +212,40 @@ export class D1 {
   }
 
 
-  toValues(fields, values, opts) {
-    let r = []
-    for(let i = 0; i < fields.length; i++){
-      r.push(this.toValue(fields[i], values[i], opts))
-    }
-    return r
+  toValues(values) {
+    return values.map(v => {
+      return this.toValue(v)
+    })
   }
 
-  toValue(f, v, opts) {
-    console.log("type of v:", f, typeof v)
+  toValue(v) {
+    // console.log("type of v:", f, typeof v)
     if (v == null) return null
     if (v instanceof Date) return v.toISOString()
     if (typeof v == 'undefined') return null
-    if (typeof v == 'object') {
-      // if(this.isJSONType(f, opts)) {
-        // then we'll do JSON patch here
-        // return `json_patch(${f}, '${JSON.stringify(v)}')`
-      // } else {
-      return JSON.stringify(v)
-          // }
-        }
+    if (typeof v == 'object') return JSON.stringify(v)
     if (typeof v == 'boolean') return v ? 1 : 0
     return v
   }
 
-  toFields(fields, values, opts){
+  toFields(fields, values, opts) {
     // replacing: let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
     let r = ''
-    for(let i = 0; i < fields.length; i++){
+    for (let i = 0; i < fields.length; i++) {
       let f = fields[i]
-      if(i > 0)r += ', '
-      r += f + ' = ' +this.valueWrap(f, values[i], opts)
+      if (i > 0) r += ', '
+      r += f + ' = ' + this.valueWrap(f, values[i], opts)
     }
     return r
   }
 
-  valueWrap(f, v, opts){
-    if(opts.isUpdate && typeof v == "object"){
+  valueWrap(f, v, opts) {
+    if (opts.isUpdate && typeof v == "object") {
       // then we'll do JSON patch here
       // stringifying so we don't need to have to bind values
       return `IFNULL('${JSON.stringify(v)}', json_patch(${f}, ?))`
     }
-    return '?' 
+    return '?'
   }
 
   // isJSONType(f, opts){
