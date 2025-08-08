@@ -1,8 +1,10 @@
 import { nanoid } from "nanoid"
 
 export class D1 {
+
   constructor(db) {
     this.db = db
+    this.debug = false
   }
 
   prepare(s) {
@@ -164,7 +166,7 @@ export class D1 {
       }
     }
     let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
-    // console.log("SQL:", s, values)
+    if (this.debug) console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
     // let o = {}
@@ -203,7 +205,7 @@ export class D1 {
     let s = `UPDATE ${table} SET ${this.toFields(fields, values, opts)} WHERE id = ?`
     let vs = this.toValues(values)
     vs.push(id)
-    // console.log("SQL:", s, vs)
+    if (this.debug) console.log("SQL:", s, vs)
     let st = this.db.prepare(s).bind(...vs)
     let r = await st.run()
     // let o = {}
