@@ -2,15 +2,15 @@
 
 JavaScript helpers for Cloudflare dev services. 
 
+## Starter kit
+
+Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
+
 ## Install
 
 ```sh
 npm install treeder/flaregun
 ```
-
-## Starter kit
-
-Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
 
 ## D1 Sqlite Database
 
@@ -24,14 +24,18 @@ let d1 = new D1(env.D1) // just adds some extra functionality to the built in d1
 
 // then you can use the new functions
 // insert new data
-await d1.insert('users', {name: 'Jimbo', email: 'x@y.com'})
+let user = {name: 'Jimbo', email: 'x@y.com'}
+await d1.insert('users', user)
 
+user.name = 'Jim Bean'
 // update a row
-await d1.update('users', user.id, {name: 'Jim Bean'})
+await d1.update('users', user.id, user)
 
 // querying
 let users = await d1.query('users', {
     where: [['orgID', '=', orgID], ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
+    order: ['createdAt', 'asc'],
+    limit: 100,
 })
 
 // querying JSON data using path notation
@@ -40,13 +44,14 @@ let users = await d1.query('users', {
 }
 ```
 
-### Properties
+### Using models for fields
 
-This is optional, but will help with parsing data after querying. 
+Use models for parsing fields. This  is the same format as for [Lit](https://lit.dev) properties AND you can use the 
+same models for automatic [migrations](https://github.com/treeder/migrations)!
 
 ```js
-// First define your models as classes:
-export class Product {
+export class User {
+  static table = 'users'
   static properties = {
     id: {
       type: String,
@@ -55,23 +60,28 @@ export class Product {
     createdAt: {
       type: Date,
     },
+    updatedAt: {
+      type: Date,
+    },
     name: {
       type: String,
     },
-    price: {
-      type: Number,
+    email: {
+      type: String,
     },
     data: {
-      type: Object, // will treat as JSON
-    }
+      type: Object, // this is stored as a JSON object so you can stuff anything in here and still query on it.
+    },
   }
 }
 ```
 
-Then when querying:
+Then use it like this:
 
 ```js
-await d1.query('products', {
-  model: Product,
-})
+let users = await d1.query('users', {
+    model: User,
+}
 ```
+
+This will parse the dates, JSON, etc into the proper types.

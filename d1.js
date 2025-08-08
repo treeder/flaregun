@@ -113,17 +113,25 @@ export class D1 {
     return { w, binds }
   }
 
-  async insert(table, fields, values) {
+  async insert(table, obj, opts={}) {
     let ob = null
-    if (fields instanceof Object && !Array.isArray(fields)) {
-      ob = fields
+    let fields = []
+    let values = []
+    if (obj instanceof Object && !Array.isArray(obj)) {
+      ob = obj
       values = []
       let f2 = []
-      for (const f in fields) {
+      for (const f in obj) {
         f2.push(f)
-        values.push(fields[f])
+        values.push(obj[f])
       }
       fields = f2
+    } else {
+      // deprecated
+      fields = obj
+      values = opts
+      ob = {}
+      opts = {}
     }
     let id
     if (!fields.includes('id')) {
@@ -157,61 +165,115 @@ export class D1 {
     }
     let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
     // console.log("SQL:", s, values)
-    let st = this.db.prepare(s).bind(...this.toValues(values))
+    let st = this.db.prepare(s).bind(...this.toValues(fields, values, opts))
     let r = await st.run()
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
   }
 
-  async update(table, id, fields, values) {
+  async update(table, id, obj, opts={}) {
     let ob = null
-    if (fields instanceof Object && !Array.isArray(fields)) {
-      ob = fields
+    let fields = []
+    let values = []
+    if (obj instanceof Object && !Array.isArray(obj)) {
+      ob = obj
       values = []
       let f2 = []
-      for (const f in fields) {
+      for (const f in obj) {
         if (f == 'id') continue
         if (f == 'createdAt') continue // skip, already set on create
         if (f == 'updatedAt') continue // skip, we'll set below
         f2.push(f)
-        values.push(fields[f])
+        values.push(obj[f])
       }
       fields = f2
+    } else {
+      fields = obj
+      values = opts
+      ob = {}
+      opts = {}
     }
+    opts.isUpdate = true
     let now = new Date().toISOString()
     fields.push('updatedAt')
     values.push(now)
     ob.updatedAt = now
-    let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
-    values.push(id)
-    // console.log("SQL:", s, values)
-    let st = this.db.prepare(s).bind(...this.toValues(values))
+    // let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ' + this.valueWrap(f, opts)).join(',')} WHERE id = ?`
+    let s = `UPDATE ${table} SET ${this.toFields(fields, values, opts)} WHERE id = ?`
+    let vs = this.toValues(fields, values, opts)
+    vs.push(id)
+    console.log("SQL:", s, vs)
+    let st = this.db.prepare(s).bind(...vs)
     let r = await st.run()
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
   }
 
-  toValues(values) {
-    return values.map(v => {
-      return this.toValue(v)
-    })
+
+  toValues(fields, values, opts) {
+    let r = []
+    for(let i = 0; i < fields.length; i++){
+      r.push(this.toValue(fields[i], values[i], opts))
+    }
+    return r
   }
 
-  toValue(v) {
+  toValue(f, v, opts) {
+    console.log("type of v:", f, typeof v)
     if (v == null) return null
     if (v instanceof Date) return v.toISOString()
     if (typeof v == 'undefined') return null
-    if (typeof v == 'object') return JSON.stringify(v)
+    if (typeof v == 'object') {
+      // if(this.isJSONType(f, opts)) {
+        // then we'll do JSON patch here
+        // return `json_patch(${f}, '${JSON.stringify(v)}')`
+      // } else {
+      return JSON.stringify(v)
+          // }
+        }
     if (typeof v == 'boolean') return v ? 1 : 0
     return v
   }
+
+  toFields(fields, values, opts){
+    // replacing: let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
+    let r = ''
+    for(let i = 0; i < fields.length; i++){
+      let f = fields[i]
+      if(i > 0)r += ', '
+      r += f + ' = ' +this.valueWrap(f, values[i], opts)
+    }
+    return r
+  }
+
+  valueWrap(f, v, opts){
+    if(opts.isUpdate && typeof v == "object"){
+      // then we'll do JSON patch here
+      // stringifying so we don't need to have to bind values
+      return `IFNULL('${JSON.stringify(v)}', json_patch(${f}, ?))`
+    }
+    return '?' 
+  }
+
+  // isJSONType(f, opts){
+  //   let clz = opts.model
+  //   if (!clz || !clz.properties) return false
+  //   let prop = clz.properties[f]
+  //   console.log("PROP:", prop)
+  //   if(!prop) return false
+  //   if(prop.type == JSON){
+  //     return true
+  //   }
+  //   return false
+  // }
 
   parseProperties(ob, clz) {
     if (!ob) return
     if (!clz || !clz.properties) return
     for (const prop in clz.properties) {
+      // console.log("prop:", prop, ob[prop])
       if (!ob[prop]) continue
       let p = clz.properties[prop]
       ob[prop] = this.parseProp(ob[prop], p)
