@@ -230,6 +230,20 @@ export class D1 {
     return v
   }
 
+  /**
+   * Only if it's a basic object, not a date or anything else
+   * @param {*} v 
+   * @returns 
+   */
+  isObject(v) {
+    if (v == null) return false
+    if (v instanceof Date) return false
+    if (typeof v == 'undefined') return false
+    if (typeof v == 'boolean') return false
+    if (typeof v == 'number') return false
+    return typeof v === 'object' && v !== null && !Array.isArray(v)
+  }
+
   toFields(fields, values, opts) {
     // replacing: let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
     let r = ''
@@ -239,10 +253,6 @@ export class D1 {
       r += f + ' = ' + this.valueWrap(f, values[i], opts)
     }
     return r
-  }
-
-  isObject(value) {
-    return typeof value === 'object' && value !== null && !Array.isArray(value)
   }
 
   valueWrap(f, v, opts) {
