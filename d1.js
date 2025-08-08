@@ -225,8 +225,8 @@ export class D1 {
     if (v == null) return null
     if (v instanceof Date) return v.toISOString()
     if (typeof v == 'undefined') return null
-    if (typeof v == 'object') return JSON.stringify(v)
     if (typeof v == 'boolean') return v ? 1 : 0
+    if (typeof v == 'object') return JSON.stringify(v)
     return v
   }
 
@@ -241,8 +241,12 @@ export class D1 {
     return r
   }
 
+  isObject(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+  }
+
   valueWrap(f, v, opts) {
-    if (opts.isUpdate && typeof v == "object") {
+    if (opts.isUpdate && this.isObject(v)) {
       // then we'll do JSON patch here
       // stringifying so we don't need to have to bind values
       return `IFNULL('${JSON.stringify(v)}', json_patch(${f}, ?))`
