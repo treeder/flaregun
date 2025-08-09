@@ -165,7 +165,7 @@ export class D1 {
         throw new Error('Field must be alphanumeric')
       }
     }
-    let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
+    let s = `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${fields.map(f => '?').join(',')})`
     if (this.debug) console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
@@ -201,8 +201,9 @@ export class D1 {
     fields.push('updatedAt')
     values.push(now)
     ob.updatedAt = now
-    // let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ' + this.valueWrap(f, opts)).join(',')} WHERE id = ?`
-    let s = `UPDATE ${table} SET ${this.toFields(fields, values, opts)} WHERE id = ?`
+    let fieldsAndValues = this.toFields(fields, values, opts)
+    values = fieldsAndValues.values
+    let s = `UPDATE ${table} SET ${fieldsAndValues.fieldString} WHERE id = ?`
     let vs = this.toValues(values)
     vs.push(id)
     if (this.debug) console.log("SQL:", s, vs)
@@ -247,21 +248,30 @@ export class D1 {
   toFields(fields, values, opts) {
     // replacing: let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
     let r = ''
+    let values2 = []
     for (let i = 0; i < fields.length; i++) {
       let f = fields[i]
       if (i > 0) r += ', '
-      r += f + ' = ' + this.valueWrap(f, values[i], opts)
+      let vw = this.valueWrap(f, values[i], opts)
+      r += f + ' = ' + vw.str
+      for (let j = 0; j < vw.numValues; j++) {
+        values2.push(values[i])
+      }
+      // if (vw.numValues > 1) {
+      //   values.splice(i, 0, ...values.splice(i + 1, vw.numValues - 1))
+      // }
     }
-    return r
+    return { fieldString: r, values: values2 }
   }
 
   valueWrap(f, v, opts) {
     if (opts.isUpdate && this.isObject(v)) {
+      // console.log("isObject:", v)
       // then we'll do JSON patch here
       // stringifying so we don't need to have to bind values
-      return `IFNULL('${JSON.stringify(v)}', json_patch(${f}, ?))`
+      return { str: `IFNULL(?, json_patch(${f}, ?))`, numValues: 2 }
     }
-    return '?'
+    return { str: '?', numValues: 1 }
   }
 
   // isJSONType(f, opts){

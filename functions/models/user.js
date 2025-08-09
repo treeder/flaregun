@@ -18,7 +18,7 @@ export class User {
       type: String,
     },
     email: {
-
+      type: String,
     },
     age: {
       type: Number,
