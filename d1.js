@@ -89,7 +89,7 @@ export class D1 {
     }
     if (q.limit) s += " LIMIT " + q.limit
     if (q.offset) s += " OFFSET " + q.offset
-    // console.log("SQL:", s, binds)
+    if (this.debug) console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
