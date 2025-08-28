@@ -1,7 +1,7 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "2.0.8",
+  "version": "3.0.0",
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "d1.js",
   "scripts": {
@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
+    "models": "github:treeder/models",
     "nanoid": "^5.0.6"
   },
   "devDependencies": {

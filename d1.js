@@ -1,7 +1,16 @@
-import { nanoid } from "nanoid"
+import { parseModel } from 'models'
+import { nanoid } from 'nanoid'
 
 export class D1 {
-
+  /**
+   * Pass in a sqlite or D1 instance,
+   *
+   * ```js
+   * let d1 = new D1(env.D1)
+   * ```
+   *
+   * @param {*} db
+   */
   constructor(db) {
     this.db = db
     this.debug = false
@@ -11,40 +20,87 @@ export class D1 {
     return this.db.prepare(s)
   }
 
+  /**
+   * Get the table name for a class or string.
+   * @param {String|class} clzOrName
+   * @returns
+   */
+  tableName(clzOrName) {
+    if (typeof clzOrName == 'string') {
+      return clzOrName
+    }
+    return clzOrName.table || toTableName(clzOrName.name)
+  }
+
+  /**
+   * Get a single record by id.
+   * @param {*} table
+   * @param {*} id
+   * @param {*} q
+   * @returns
+   */
   async get(table, id, q = {}) {
-    let r = await this.db.prepare(`SELECT * FROM ${table} where id = ?`).bind(id).first()
-    this.parseProperties(r, q.model)
+    if (typeof table != 'string') {
+      q.model = table
+    }
+    let r = await this.db
+      .prepare(`SELECT * FROM ${this.tableName(table)} where id = ?`)
+      .bind(id)
+      .first()
+    parseModel(r, q.model)
     return r
   }
 
+  /**
+   * Delete a single record by id.
+   * @param {*} table
+   * @param {*} id
+   * @returns
+   */
   async delete(table, id) {
-    return await this.db.prepare(`DELETE FROM ${table} where id = ?`).bind(id).run()
+    return await this.db
+      .prepare(`DELETE FROM ${this.tableName(table)} where id = ?`)
+      .bind(id)
+      .run()
   }
 
-  async query(table, q) {
+  /**
+   * Query for data. See README for example.
+   *
+   * @param {*} table
+   * @param {*} q
+   * @returns
+   */
+  async query(table, q = {}) {
+    if (typeof table != 'string') {
+      q.model = table
+    }
     let st = this.prepStmt(table, q)
     let r = await st.all()
     // console.log("QUERY:", r)
     if (q.model) {
       for (let r2 of r.results) {
-        this.parseProperties(r2, q.model)
+        parseModel(r2, q.model)
       }
     }
     return r.results
   }
 
   async first(table, q) {
+    if (typeof table != 'string') {
+      q.model = table
+    }
     q.limit = 1
     let st = this.prepStmt(table, q)
     let r = await st.first()
     // console.log("FIRST:", r)
-    this.parseProperties(r, q.model)
+    parseModel(r, q.model)
     return r
   }
 
   prepStmt(table, q = {}) {
     // console.log("stmt", q)
-    let s = "SELECT * FROM " + table
+    let s = 'SELECT * FROM ' + this.tableName(table)
     let w = []
     let binds = []
     if (q.where) {
@@ -53,8 +109,7 @@ export class D1 {
           let i = 0
           for (const q2 of q.where) {
             // console.log("Q2:", q2)
-            if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase())
-              if (typeof q2[2] == 'undefined') continue
+            if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase()) if (typeof q2[2] == 'undefined') continue
             if (i > 0) w.push(' AND')
             if (q2[1].toLowerCase() == 'or') {
               let w1 = this.singleW(q2[0])
@@ -82,14 +137,14 @@ export class D1 {
       } else {
         throw new Error("Unknown type for 'where', must be an array or object")
       }
-      if (w.length > 0) s += " WHERE " + w.join(' ')
+      if (w.length > 0) s += ' WHERE ' + w.join(' ')
     }
     if (q.order) {
-      s += " ORDER BY " + q.order[0] + " " + q.order[1]
+      s += ' ORDER BY ' + q.order[0] + ' ' + q.order[1]
     }
-    if (q.limit) s += " LIMIT " + q.limit
-    if (q.offset) s += " OFFSET " + q.offset
-    if (this.debug) console.log("SQL:", s, binds)
+    if (q.limit) s += ' LIMIT ' + q.limit
+    if (q.offset) s += ' OFFSET ' + q.offset
+    if (this.debug) console.log('SQL:', s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
@@ -115,7 +170,18 @@ export class D1 {
     return { w, binds }
   }
 
+  /**
+   * Insert a new record.
+   *
+   * @param {*} table
+   * @param {*} obj the object to store.
+   * @param {*} opts
+   * @returns
+   */
   async insert(table, obj, opts = {}) {
+    if (typeof table != 'string') {
+      opts.model = table
+    }
     let ob = null
     let fields = []
     let values = []
@@ -165,8 +231,8 @@ export class D1 {
         throw new Error('Field must be alphanumeric')
       }
     }
-    let s = `INSERT INTO ${table} (${fields.join(', ')}) VALUES (${fields.map(f => '?').join(',')})`
-    if (this.debug) console.log("SQL:", s, values)
+    let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
+    if (this.debug) console.log('SQL:', s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
     // let o = {}
@@ -174,7 +240,21 @@ export class D1 {
     return { id: id, response: r, object: ob }
   }
 
+  /**
+   * Update an existing record.
+   *
+   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
+   *
+   * @param {*} table
+   * @param {*} id
+   * @param {*} obj
+   * @param {*} opts
+   * @returns
+   */
   async update(table, id, obj, opts = {}) {
+    if (typeof table != 'string') {
+      opts.model = table
+    }
     let ob = null
     let fields = []
     let values = []
@@ -203,10 +283,10 @@ export class D1 {
     ob.updatedAt = now
     let fieldsAndValues = this.toFields(fields, values, opts)
     values = fieldsAndValues.values
-    let s = `UPDATE ${table} SET ${fieldsAndValues.fieldString} WHERE id = ?`
+    let s = `UPDATE ${this.tableName(table)} SET ${fieldsAndValues.fieldString} WHERE id = ?`
     let vs = this.toValues(values)
     vs.push(id)
-    if (this.debug) console.log("SQL:", s, vs)
+    if (this.debug) console.log('SQL:', s, vs)
     let st = this.db.prepare(s).bind(...vs)
     let r = await st.run()
     // let o = {}
@@ -214,9 +294,8 @@ export class D1 {
     return { id: id, response: r, object: ob }
   }
 
-
   toValues(values) {
-    return values.map(v => {
+    return values.map((v) => {
       return this.toValue(v)
     })
   }
@@ -233,8 +312,8 @@ export class D1 {
 
   /**
    * Only if it's a basic object, not a date or anything else
-   * @param {*} v 
-   * @returns 
+   * @param {*} v
+   * @returns
    */
   isObject(v) {
     if (v == null) return false
@@ -273,52 +352,17 @@ export class D1 {
     }
     return { str: '?', numValues: 1 }
   }
+}
 
-  // isJSONType(f, opts){
-  //   let clz = opts.model
-  //   if (!clz || !clz.properties) return false
-  //   let prop = clz.properties[f]
-  //   console.log("PROP:", prop)
-  //   if(!prop) return false
-  //   if(prop.type == JSON){
-  //     return true
-  //   }
-  //   return false
-  // }
+// this is copied from migrations, should share these. Probably in this library and have migrations use this.
+export function toTableName(str) {
+  return pluralize(toCamelCase(str))
+}
 
-  parseProperties(ob, clz) {
-    if (!ob) return
-    if (!clz || !clz.properties) return
-    for (const prop in clz.properties) {
-      // console.log("prop:", prop, ob[prop])
-      if (!ob[prop]) continue
-      let p = clz.properties[prop]
-      ob[prop] = this.parseProp(ob[prop], p)
-    }
-  }
+function toCamelCase(str) {
+  return str.charAt(0).toLowerCase() + str.slice(1)
+}
 
-  parseProp(val, p) {
-    if (!val || !p) return val
-    switch (p.type) {
-      case Number:
-        // return "NUMERIC"
-        // todo: parse as number or let user pass in a parser if they want ot use Big.js or something
-        return new Number(val)
-      case Boolean:
-        return val == 1
-      case Date:
-        return new Date(val)
-      case BigInt:
-        return new BigInt(val)
-      case Object:
-        return JSON.parse(val)
-      case JSON:
-        return JSON.parse(val)
-      case Array:
-        return JSON.parse(val)
-      default:
-        return val
-    }
-
-  }
+function pluralize(str) {
+  return str + 's'
 }

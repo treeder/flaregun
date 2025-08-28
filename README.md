@@ -112,21 +112,3 @@ async scheduled(event, env, ctx) {
   }
 }
 ```
-
-export async function onRequestPost(c) {
-c.data.logger.log('scheduler triggered!')
-
-let res = new Response('Hello, schedulo!')
-try {
-let input = await c.request.json()
-c.data.logger.log('scheduled input:', input)
-} catch (e) {
-c.data.logger.log('error:', e)
-res = new Response(`${e.message}`, { status: e.status || 500 })
-}
-return res
-}
-
-```
-
-```
