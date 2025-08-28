@@ -1,10 +1,10 @@
 # Flaregun
 
-JavaScript helpers for Cloudflare dev services. 
+JavaScript helpers for Cloudflare dev services.
 
 ## Starter kit
 
-Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app. 
+Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app.
 
 ## Install
 
@@ -14,7 +14,7 @@ npm install treeder/flaregun
 
 ## D1 Sqlite Database
 
-This handles inserting and updating objects, assigning IDs, nested JSON objects, etc. 
+This handles inserting and updating objects, assigning IDs, nested JSON objects, etc.
 
 ```js
 import { D1 } from 'flaregun'
@@ -46,7 +46,7 @@ let users = await d1.query('users', {
 
 ### Using models for fields
 
-Use models for parsing fields. This  is the same format as for [Lit](https://lit.dev) properties AND you can use the 
+Use models for parsing fields. This is the same format as for [Lit](https://lit.dev) properties AND you can use the
 same models for automatic [migrations](https://github.com/treeder/migrations)!
 
 ```js
@@ -85,3 +85,48 @@ let users = await d1.query('users', {
 ```
 
 This will parse the dates, JSON, etc into the proper types.
+
+## Scheduler
+
+This makes it easy to handle events on a schedule.
+
+```js
+const scheduler = new Scheduler()
+scheduler.addEventListener('hour', myFunction)
+```
+
+That will call `myFunction(c)` every hour. You can use minute, hour, day, week, month too.
+
+Setup a cron trigger in your worker settings to run every minute: `*/1 * * * *`
+
+And add this scheduled function to your worker:
+
+```js
+async scheduled(event, env, ctx) {
+  // let scheduledTime = new Date(event.scheduledTime)
+  console.log(`Scheduled event fired. cron: ${event.cron}`)
+  try {
+    await scheduler.run(event)
+  } catch(e){
+    console.error(e)
+  }
+}
+```
+
+export async function onRequestPost(c) {
+c.data.logger.log('scheduler triggered!')
+
+let res = new Response('Hello, schedulo!')
+try {
+let input = await c.request.json()
+c.data.logger.log('scheduled input:', input)
+} catch (e) {
+c.data.logger.log('error:', e)
+res = new Response(`${e.message}`, { status: e.status || 500 })
+}
+return res
+}
+
+```
+
+```
