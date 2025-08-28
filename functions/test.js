@@ -27,11 +27,11 @@ export async function onRequestGet(c) {
   })
   console.log('users:', users)
 
-  return Response.json({ Hello: 'World!' })
+  return Response.json({ hello: 'world!' })
 }
 
 export async function getAndPrint(c, model, id) {
-  let o = await c.data.d1.get(table, id, { model })
+  let o = await c.data.d1.get(model, id)
   console.log('got:', o)
   return o
 }
