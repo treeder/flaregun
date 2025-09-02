@@ -47,7 +47,7 @@ export class D1 {
       .prepare(`SELECT * FROM ${this.tableName(table)} where id = ?`)
       .bind(id)
       .first()
-    parseModel(r, q.model)
+    parseModel(r, q.model, { parseJSON: true })
     return r
   }
 
@@ -80,7 +80,7 @@ export class D1 {
     // console.log("QUERY:", r)
     if (q.model) {
       for (let r2 of r.results) {
-        parseModel(r2, q.model)
+        parseModel(r2, q.model, { parseJSON: true })
       }
     }
     return r.results
@@ -94,7 +94,7 @@ export class D1 {
     let st = this.prepStmt(table, q)
     let r = await st.first()
     // console.log("FIRST:", r)
-    parseModel(r, q.model)
+    parseModel(r, q.model, { parseJSON: true })
     return r
   }
 
