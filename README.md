@@ -86,6 +86,47 @@ let users = await d1.query('users', {
 
 This will parse the dates, JSON, etc into the proper types.
 
+## Error Handler
+
+This is a special error handler that will format your error nicely formatted for Cloudflare logging and
+the ability to send notifications, etc.
+
+In your global request handler (if you're using cloudflare workers file based routing, in your root `_middleware.js`).
+
+```js
+// define your ErrorHandler with options
+const errorHandler = new ErrorHandler()
+
+// then in your global wrapper:
+try {
+  await c.next()
+} catch (err) {
+  return errorHandler.handle(c, err)
+}
+```
+
+### Error Alerts
+
+You can have the errors sent to a webhook:
+
+```js
+const errorHandler = new ErrorHandler({
+  postTo: {
+    url: 'https://chat.googleapis.com/v1/spaces/AAQAsw9EPWU/messages?key=X&token=Y',
+    options: {
+      method: 'POST',
+      body: (message) => {
+        return { text: message }
+      },
+    },
+  },
+})
+```
+
+Change the body function to change the format expected by the webhook service you are using.
+
+To prevent duplicate errors, ensure you have a key/value store binding at `env.KV`.
+
 ## Scheduler
 
 This makes it easy to handle events on a schedule.
@@ -98,6 +139,8 @@ scheduler.addEventListener('hour', myFunction)
 That will call `myFunction(c)` every hour. You can use minute, hour, day, week, month too.
 
 Setup a cron trigger in your worker settings to run every minute: `*/1 * * * *`
+
+TODO: Explain how to setup a cron trigger.
 
 And add this scheduled function to your worker:
 
