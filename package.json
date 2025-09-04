@@ -1,9 +1,9 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "3.0.7",
+  "version": "3.1.0",
   "description": "JavaScript utils for Cloudflare Workers.",
-  "main": "d1.js",
+  "main": "index.js",
   "scripts": {
     "start": "npm install && npx concurrently \"npx nodemon --watch functions --watch public --exec 'npx wrangler pages functions build --outdir=./dist/'\" \"npx wrangler dev --env dev --no-bundle --live-reload\"",
     "test": "echo \"Error: no test specified\" && exit 1"
