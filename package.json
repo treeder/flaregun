@@ -21,10 +21,10 @@
   "dependencies": {
     "api": "github:treeder/api",
     "models": "github:treeder/models",
-    "nanoid": "^5.0.6",
-    "once": "github:treeder/once"
+    "nanoid": "^5.0.6"
   },
   "devDependencies": {
-    "migrations": "github:treeder/migrations"
+    "migrations": "github:treeder/migrations",
+    "once": "github:treeder/once"
   }
 }

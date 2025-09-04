@@ -10,14 +10,14 @@ export async function onRequest(c) {
   c.data.d1 = new D1(c.env.D1)
   c.data.d1.debug = true
   try {
-    await once(one, c)
+    await once(init, c)
     return await c.next()
   } catch (e) {
     return errorHandler.handle(c, e)
   }
 }
 
-async function one(c) {
+async function init(c) {
   console.log('ONE')
 
   errorHandler = new ErrorHandler({
