@@ -306,6 +306,7 @@ export class D1 {
     if (v instanceof Date) return v.toISOString()
     if (typeof v == 'undefined') return null
     if (typeof v == 'boolean') return v ? 1 : 0
+    if (typeof v == 'bigint') return v.toString()
     if (typeof v == 'object') return JSON.stringify(v)
     return v
   }
@@ -321,6 +322,7 @@ export class D1 {
     if (typeof v == 'undefined') return false
     if (typeof v == 'boolean') return false
     if (typeof v == 'number') return false
+    if (typeof v == 'bigint') return false
     return typeof v === 'object' && v !== null && !Array.isArray(v)
   }
 
