@@ -1,6 +1,12 @@
 import { parseModel } from 'models'
 import { nanoid } from 'nanoid'
 
+// This prevents TypeError: Do not know how to serialize a BigInt
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
+BigInt.prototype.toJSON = function () {
+  this.toString()
+}
+
 export class D1 {
   /**
    * Pass in a sqlite or D1 instance,
@@ -304,10 +310,11 @@ export class D1 {
     // console.log("type of v:", f, typeof v)
     if (v == null) return null
     if (v instanceof Date) return v.toISOString()
-    if (typeof v == 'undefined') return null
-    if (typeof v == 'boolean') return v ? 1 : 0
-    if (typeof v == 'bigint') return v.toString()
-    if (typeof v == 'object') return JSON.stringify(v)
+    let t = typeof v
+    if (t == 'undefined') return null
+    if (t == 'boolean') return v ? 1 : 0
+    if (t === 'bigint') return v.toString()
+    if (t == 'object') return JSON.stringify(v)
     return v
   }
 
