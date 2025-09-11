@@ -14,7 +14,7 @@ export class ErrorHandler {
       message: err.message,
       stack: err.stack,
     })
-    await this.doPost(c, err)
+    c.waitUntil(this.doPost(c, err))
     return Response.json({ error: { message: err.message } }, { status: err.status || 500 })
   }
 
