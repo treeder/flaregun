@@ -4,7 +4,7 @@ JavaScript helpers for Cloudflare dev services.
 
 ## Starter kit
 
-Check out [the starter kit](./starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app.
+Check out [the starter kit](https://github.com/treeder/flaregun-starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app.
 
 ## Install
 
