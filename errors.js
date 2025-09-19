@@ -1,6 +1,11 @@
 import api from 'api'
 
 /**
+ * Error handler for Cloudflare Workers.
+ *
+ * - Prints to console nicely for Cloudflare logging
+ * - Responds with nice error response based on ARF
+ * - Posts to a webhook if configured (ie: into a chat) and only once per 2 days per error.
  *
  */
 export class ErrorHandler {

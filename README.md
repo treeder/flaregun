@@ -47,7 +47,8 @@ let users = await d1.query('users', {
 ### Using models for fields
 
 Use models for parsing fields. This is the same format as for [Lit](https://lit.dev) properties AND you can use the
-same models for automatic [migrations](https://github.com/treeder/migrations)!
+same models for automatic [migrations](https://github.com/treeder/migrations), JSON parsing, etc. It uses
+[models](https://github.com/treeder/models) for parsing fields.
 
 ```js
 export class User {
