@@ -1,5 +1,5 @@
 // https://developers.cloudflare.com/queues/configuration/javascript-apis/#consumer
-import { User } from './models/user.js'
+import { User } from './data/user.js'
 import { D1 } from '../d1.js'
 
 export async function queue(c) {

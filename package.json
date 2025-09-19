@@ -23,6 +23,7 @@
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
     "api": "github:treeder/api",
+    "dotenv": "^17.2.2",
     "jsonc-parse": "^1.5.5",
     "models": "github:treeder/models",
     "nanoid": "^5.0.6"

@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { parseFile } from 'jsonc-parse'
 import { fetchCF } from './cfapi.js'
 import { writeFileSync } from 'fs'
