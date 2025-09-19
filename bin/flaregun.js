@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { build } from './build.js'
 import { setup } from './setup.js'
 
