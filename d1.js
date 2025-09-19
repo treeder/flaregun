@@ -92,7 +92,7 @@ export class D1 {
     return r.results
   }
 
-  async first(table, q) {
+  async first(table, q = {}) {
     if (typeof table != 'string') {
       q.model = table
     }

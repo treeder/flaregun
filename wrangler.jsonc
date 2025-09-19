@@ -45,15 +45,15 @@
             "binding": "QUEUE",
           },
         ],
-        "consumers": [
-          {
-            "queue": "flaregun-dev",
-            "max_batch_size": 10,
-            "max_batch_timeout": 30,
-            "max_retries": 3,
-            "retry_delay": 60,
-          },
-        ],
+        // "consumers": [
+        //   {
+        //     "queue": "flaregun-dev",
+        //     "max_batch_size": 10,
+        //     "max_batch_timeout": 30,
+        //     "max_retries": 3,
+        //     "retry_delay": 60,
+        //   },
+        // ],
       },
       "triggers": {
         "crons": ["* * * * *"],
