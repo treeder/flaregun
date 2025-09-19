@@ -32,31 +32,66 @@ async function postBuild() {
   let add = ''
   try {
     const filePath = path.resolve(process.cwd(), './functions/queue.js')
-    const module = await import(filePath) // Dynamically import the module
-    console.log(module)
+    if (fs.existsSync(filePath)) {
+      const module = await import(filePath) // Dynamically import the module
+      console.log(module)
 
-    // Just want to read the contents actually
-    let queueContents = fs.readFileSync(filePath).toString()
-    let lines = queueContents.split('\n')
+      // Just want to read the contents actually
+      let queueContents = fs.readFileSync(filePath).toString()
+      let lines = queueContents.split('\n')
 
-    let qs = ''
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i]
-      if (line.includes('queue(')) {
-        qs += line.replace('queue(', 'queue2(').replace('export', '') + '\n'
-      } else {
-        qs += line + '\n'
+      let qs = ''
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
+        if (line.includes('queue(')) {
+          qs += line.replace('queue(', 'queue2(').replace('export', '') + '\n'
+        } else {
+          qs += line + '\n'
+        }
       }
-    }
 
-    add += `
-    async queue(batch, env, ctx) {
-       ${qs}
-      ctx.env = env
-      ctx.batch = batch
-      return await queue2(ctx)
-    },
+      add += `
+      async queue(batch, env, ctx) {
+        ${qs}
+        ctx.env = env
+        ctx.batch = batch
+        return await queue2(ctx)
+      },
     `
+    }
+  } catch (e) {
+    console.error(e)
+  }
+
+  try {
+    const filePath = path.resolve(process.cwd(), './functions/scheduled.js')
+    if (fs.existsSync(filePath)) {
+      const module = await import(filePath) // Dynamically import the module
+      console.log(module)
+
+      // Just want to read the contents actually
+      let scheduledContents = fs.readFileSync(filePath).toString()
+      let lines = scheduledContents.split('\n')
+
+      let qs = ''
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
+        if (line.includes('scheduled(')) {
+          qs += line.replace('scheduled(', 'scheduled2(').replace('export', '') + '\n'
+        } else {
+          qs += line + '\n'
+        }
+      }
+
+      add += `
+      async scheduled(controller, env, ctx) {
+        ${qs}
+        ctx.env = env
+        ctx.controller = controller
+        return await scheduled2(ctx)
+      },
+    `
+    }
   } catch (e) {
     console.error(e)
   }

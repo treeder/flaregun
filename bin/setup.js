@@ -71,9 +71,6 @@ async function createDB(c, d1) {
   })
   console.log(r)
   d1.database_id = r.result.uuid
-
-  // let r = await execSync(`npx wrangler d1 create ${d1.database_name}`)
-  // console.log(r.toString())
 }
 
 async function createKV(c, kv) {
@@ -154,13 +151,19 @@ async function createQueue(c, r2) {
   //   }
   // }queue
   console.log(`Creating queue ${r2.queue}`)
-  let r = await fetchCF(c, '/queues', {
-    method: 'POST',
-    body: {
-      queue_name: r2.queue,
-      // primary_location_hint: "wnam"
-    },
-  })
-  console.log(r)
-  // r2.id = r.result.id
+  try {
+    let r = await fetchCF(c, '/queues', {
+      method: 'POST',
+      body: {
+        queue_name: r2.queue,
+        // primary_location_hint: "wnam"
+      },
+    })
+    console.log(r)
+  } catch (e) {
+    if (e.status != 409) {
+      // conflict, which is fine, already exists
+      throw e
+    }
+  }
 }
