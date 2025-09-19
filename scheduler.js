@@ -4,12 +4,12 @@ export class Scheduler {
   // not using default EventTarget because it's hard to handle asynchronous stuff well.
   // extends EventTarget {
   listeners = {
-    minutely: [],
-    hourly: [],
-    daily: [],
-    weekly: [],
-    monthly: [],
-    yearly: [],
+    minute: [],
+    hour: [],
+    day: [],
+    week: [],
+    month: [],
+    year: [],
   }
   constructor() {}
 
@@ -43,9 +43,11 @@ export class Scheduler {
    * @param {*} c
    * @param {*} input - the input to the handler
    * @param {*} input.cron - the cron string/expression that triggered this
+   * @param {*} input.scheduledTime - the time this was scheduled
    * @returns
    */
   async run(c, input) {
+    // new Date(input.scheduledTime)
     let cron = input.cron.split(' ')
     if (!cron[4].startsWith('*')) {
       input.interval = 'week'
