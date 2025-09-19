@@ -134,7 +134,6 @@ async function createR2(c, r2) {
     },
   })
   console.log(r)
-  // r2.id = r.result.id
 }
 
 async function createQueue(c, r2) {
