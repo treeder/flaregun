@@ -22,12 +22,13 @@ export async function onRequestGet(c) {
   console.log('user:', user)
   await getAndPrint(c, User, user.id)
 
-  let users = await c.data.d1.query(User.table, {
-    model: User,
-  })
+  let users = await c.data.d1.query(User)
   console.log('users:', users)
 
-  return Response.json({ hello: 'world!' })
+  let count = await c.data.d1.count(User)
+  console.log('user count:', count)
+
+  return Response.json({ hello: 'world!', users, count })
 }
 
 export async function getAndPrint(c, model, id) {

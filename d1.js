@@ -92,6 +92,18 @@ export class D1 {
     return r.results
   }
 
+  async count(table, q = {}) {
+    if (typeof table != 'string') {
+      q.model = table
+    }
+    let col = 'count(*)'
+    q.columns = [col]
+    let st = this.prepStmt(table, q)
+    let r = await st.first()
+    console.log('COUNT:', r)
+    return r[col]
+  }
+
   async first(table, q = {}) {
     if (typeof table != 'string') {
       q.model = table
@@ -106,7 +118,11 @@ export class D1 {
 
   prepStmt(table, q = {}) {
     // console.log("stmt", q)
-    let s = 'SELECT * FROM ' + this.tableName(table)
+    let cols = '*'
+    if (q.columns) {
+      cols = q.columns.join(', ')
+    }
+    let s = 'SELECT ' + cols + ' FROM ' + this.tableName(table)
     let w = []
     let binds = []
     if (q.where) {
