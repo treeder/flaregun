@@ -1,4 +1,4 @@
-import { User } from './models/user.js'
+import { User } from './data/users.js'
 
 export async function onRequestGet(c) {
   let user = {
