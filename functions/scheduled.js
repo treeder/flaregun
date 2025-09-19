@@ -1,5 +1,11 @@
 // https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/
+import { User } from './models/user.js'
+import { D1 } from '../d1.js'
+
 export async function scheduled(c) {
   console.log(c.controller.cron, c.controller.type, c.controller.scheduledTime)
   // ctx.waitUntil(doSomeTaskOnASchedule());
+  let d1 = new D1(c.env.D1)
+  let r = d1.first(User)
+  console.log('first user in scheduled:', r)
 }

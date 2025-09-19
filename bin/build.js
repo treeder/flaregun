@@ -33,26 +33,11 @@ async function postBuild() {
   try {
     const filePath = path.resolve(process.cwd(), './functions/queue.js')
     if (fs.existsSync(filePath)) {
-      const module = await import(filePath) // Dynamically import the module
-      console.log(module)
-
-      // Just want to read the contents actually
-      let queueContents = fs.readFileSync(filePath).toString()
-      let lines = queueContents.split('\n')
-
-      let qs = ''
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i]
-        if (line.includes('queue(')) {
-          qs += line.replace('queue(', 'queue2(').replace('export', '') + '\n'
-        } else {
-          qs += line + '\n'
-        }
-      }
+      let s = await transformFileContents(filePath, 'queue')
 
       add += `
       async queue(batch, env, ctx) {
-        ${qs}
+        ${s}
         ctx.env = env
         ctx.batch = batch
         return await queue2(ctx)
@@ -66,26 +51,11 @@ async function postBuild() {
   try {
     const filePath = path.resolve(process.cwd(), './functions/scheduled.js')
     if (fs.existsSync(filePath)) {
-      const module = await import(filePath) // Dynamically import the module
-      console.log(module)
-
-      // Just want to read the contents actually
-      let scheduledContents = fs.readFileSync(filePath).toString()
-      let lines = scheduledContents.split('\n')
-
-      let qs = ''
-      for (let i = 0; i < lines.length; i++) {
-        let line = lines[i]
-        if (line.includes('scheduled(')) {
-          qs += line.replace('scheduled(', 'scheduled2(').replace('export', '') + '\n'
-        } else {
-          qs += line + '\n'
-        }
-      }
+      let s = await transformFileContents(filePath, 'scheduled')
 
       add += `
       async scheduled(controller, env, ctx) {
-        ${qs}
+        ${s}
         ctx.env = env
         ctx.controller = controller
         return await scheduled2(ctx)
@@ -126,4 +96,26 @@ async function postBuild() {
       console.log('File modified successfully!')
     })
   })
+}
+
+async function transformFileContents(filePath, functionName) {
+  const module = await import(filePath)
+  console.log(module)
+
+  let contents = fs.readFileSync(filePath).toString()
+  let lines = contents.split('\n')
+
+  let qs = ''
+  let rename = `${functionName}(`
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+    if (line.startsWith('//')) continue
+    if (line.startsWith('import')) continue
+    if (line.includes(rename)) {
+      qs += line.replace(rename, `${functionName}2(`).replace('export', '') + '\n'
+    } else {
+      qs += line + '\n'
+    }
+  }
+  return qs
 }
