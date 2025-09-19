@@ -1,5 +1,5 @@
 // https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/
-import { User } from './data/user.js'
+import { User } from './data/users.js'
 import { D1 } from '../d1.js'
 
 export async function scheduled(c) {

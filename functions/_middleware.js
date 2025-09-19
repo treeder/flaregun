@@ -1,5 +1,5 @@
 import { ClassMigrations } from 'migrations'
-import { User } from './models/user.js'
+import { User } from './data/users.js'
 import { D1 } from '../d1.js'
 import { ErrorHandler } from '../errors.js'
 import { once } from 'once'
