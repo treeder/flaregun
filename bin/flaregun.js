@@ -3,17 +3,13 @@
 import { build } from './build.js'
 import { setup } from './setup.js'
 
-console.log('hi')
-
 let pargs = process.argv
-console.log(pargs)
+// console.log(pargs)
 
 let command = pargs[2]
 let args = pargs.slice(3)
 console.log('command:', command)
 console.log('args:', args)
-
-console.log('done')
 
 switch (command) {
   case 'build':

@@ -23,11 +23,11 @@
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
     "api": "github:treeder/api",
+    "jsonc-parse": "^1.5.5",
     "models": "github:treeder/models",
     "nanoid": "^5.0.6"
   },
   "devDependencies": {
-    "jsonc-parse": "^1.5.5",
     "migrations": "github:treeder/migrations",
     "once": "github:treeder/once",
     "prettier": "^3.6.2"
