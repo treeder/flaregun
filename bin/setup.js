@@ -3,6 +3,7 @@ import { fetchCF } from './cfapi.js'
 import { writeFileSync } from 'fs'
 
 export async function setup(args) {
+  console.log('ENV:', process.env)
   let c = {
     env: process.env,
   }
@@ -33,6 +34,12 @@ async function parseWrangler(c) {
     for (let r2 of prod.r2_buckets) {
       console.log(r2)
       await createR2(c, r2)
+    }
+    if (prod.queues) {
+      for (let q of prod.queues.producers) {
+        console.log(q)
+        await createQueue(c, q)
+      }
     }
   }
   writeFileSync('./wrangler.jsonc', JSON.stringify(wranglerConfig, null, 2))
@@ -123,6 +130,35 @@ async function createR2(c, r2) {
     method: 'POST',
     body: {
       name: r2.bucket_name,
+      // primary_location_hint: "wnam"
+    },
+  })
+  console.log(r)
+  // r2.id = r.result.id
+}
+
+async function createQueue(c, r2) {
+  // try {
+  //   let r = await fetchCF(c, `/queues`, {})
+  //   console.log(r)
+  //   console.log(`R2 bucket ${r2.bucket_name} already exists`)
+  //   return
+  // } catch (e) {
+  //   console.error(e, e.data)
+  //   if (e.data.errors.length > 0) {
+  //     let e2 = e.data.errors[0]
+  //     if (e2.code === 10006) {
+  //       // bucket does not exist
+  //     } else {
+  //       throw e
+  //     }
+  //   }
+  // }queue
+  console.log(`Creating queue ${r2.queue}`)
+  let r = await fetchCF(c, '/queues', {
+    method: 'POST',
+    body: {
+      queue_name: r2.queue,
       // primary_location_hint: "wnam"
     },
   })

@@ -7,7 +7,7 @@
   "scripts": {
     "start": "npm install && npx wrangler dev --env dev --live-reload",
     "build": "node ./bin/flaregun.js build",
-    "setup": "node ./bin/flaregun.js setup",
+    "setup": "node --env-file ./.env ./bin/flaregun.js setup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": "./bin/flaregun.js",
