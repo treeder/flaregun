@@ -103,10 +103,6 @@ async function createKV(c, kv) {
 }
 
 async function createR2(c, r2) {
-  // if (r2.id) {
-  //   return
-  // }
-  // check if exists first
   try {
     let r = await fetchCF(c, `/r2/buckets/${r2.bucket_name}`, {})
     console.log(r)
@@ -135,22 +131,6 @@ async function createR2(c, r2) {
 }
 
 async function createQueue(c, r2) {
-  // try {
-  //   let r = await fetchCF(c, `/queues`, {})
-  //   console.log(r)
-  //   console.log(`R2 bucket ${r2.bucket_name} already exists`)
-  //   return
-  // } catch (e) {
-  //   console.error(e, e.data)
-  //   if (e.data.errors.length > 0) {
-  //     let e2 = e.data.errors[0]
-  //     if (e2.code === 10006) {
-  //       // bucket does not exist
-  //     } else {
-  //       throw e
-  //     }
-  //   }
-  // }queue
   console.log(`Creating queue ${r2.queue}`)
   try {
     let r = await fetchCF(c, '/queues', {
@@ -162,8 +142,9 @@ async function createQueue(c, r2) {
     })
     console.log(r)
   } catch (e) {
+    console.log(e.message)
     if (e.status != 409) {
-      // conflict, which is fine, already exists
+      // 409 means it already exists, all good
       throw e
     }
   }

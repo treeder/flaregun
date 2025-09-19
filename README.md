@@ -141,8 +141,6 @@ That will call `myFunction(c)` every hour. You can use minute, hour, day, week, 
 
 Setup a cron trigger in your worker settings to run every minute: `*/1 * * * *`
 
-TODO: Explain how to setup a cron trigger.
-
 And add this scheduled function to your worker:
 
 ```js

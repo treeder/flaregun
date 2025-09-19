@@ -8,8 +8,8 @@ let pargs = process.argv
 
 let command = pargs[2]
 let args = pargs.slice(3)
-console.log('command:', command)
-console.log('args:', args)
+// console.log('command:', command)
+// console.log('args:', args)
 
 switch (command) {
   case 'build':

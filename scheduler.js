@@ -15,7 +15,7 @@ export class Scheduler {
 
   /**
    *
-   * @param {*} interval is a string like "minutely", "hourly", etc.
+   * @param {*} interval is a string like "minute", "hour", "day", etc.
    * @param {*} listener an event listener that accepts a CustomEvent paramter
    */
   addEventListener(interval, listener) {
@@ -23,7 +23,7 @@ export class Scheduler {
   }
 
   /**
-   * @param {*} interval is a string like "minutely", "hourly", etc.
+   * @param {*} interval is a string like "minute", "hour", etc.
    * @param {*} listener the event listener to remove
    */
   removeEventListener(interval, listener) {
@@ -65,12 +65,8 @@ export class Scheduler {
       }
     }
 
-    // NOW CALL THE SCHEDULE FUNCTIONS
-    // Could be cool to have scheduler.addEventListener("minute", () => { ...")
-    // input.c = c
     let evt = new CustomEvent(input.interval, { detail: input })
     evt.c = c
-    // promises.push(dispatch(c, evt))
     // this doesn't seem to run!
     // c.waitUntil(awaitAll(c, scheduler.dispatchEvent(evt)))
     await awaitAll(c, this.dispatchEvent(evt))

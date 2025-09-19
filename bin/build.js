@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { exec } from 'child_process'
-import util from 'util'
 
 export async function build(args) {
   console.log('building...')
@@ -38,6 +37,7 @@ async function postBuild() {
       add += `
       async queue(batch, env, ctx) {
         ${s}
+        ctx.data = {}
         ctx.env = env
         ctx.batch = batch
         return await queue2(ctx)
@@ -56,6 +56,7 @@ async function postBuild() {
       add += `
       async scheduled(controller, env, ctx) {
         ${s}
+        ctx.data = {}
         ctx.env = env
         ctx.controller = controller
         return await scheduled2(ctx)
@@ -66,6 +67,10 @@ async function postBuild() {
     console.error(e)
   }
 
+  if (!add) {
+    // nothing to modify
+    return
+  }
   const filePath = path.resolve(process.cwd(), './dist/index.js')
 
   fs.readFile(filePath, 'utf8', (err, data) => {
