@@ -6,6 +6,6 @@ export async function scheduled(c) {
   console.log(c.controller.cron, c.controller.type, new Date(c.controller.scheduledTime))
   // ctx.waitUntil(doSomeTaskOnASchedule());
   let d1 = new D1(c.env.D1)
-  let r = d1.first(User)
+  let r = await d1.first(User)
   console.log('first user in scheduled:', r)
 }

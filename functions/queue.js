@@ -6,8 +6,8 @@ export async function queue(c) {
   console.log('env:', c.env)
   console.log('d1?', c.env.D1)
   let d1 = new D1(c.env.D1)
-  let r = d1.first(User)
-  console.log('first user:', r)
+  let r = await d1.first(User)
+  console.log('first user in queue:', r)
   for (const message of c.batch.messages) {
     console.log('Received', message)
   }
