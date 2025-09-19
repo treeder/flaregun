@@ -1,13 +1,16 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "3.1.5",
+  "version": "3.2.0",
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && npx concurrently \"npx nodemon --watch functions --watch public --exec 'npx wrangler pages functions build --outdir=./dist/'\" \"npx wrangler dev --env dev --no-bundle --live-reload\"",
+    "start": "npm install && npx wrangler dev --env dev --live-reload",
+    "build": "node ./bin/flaregun.js build",
+    "setup": "node --env-file ./.env ./bin/flaregun.js setup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": "./bin/flaregun.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/treeder/flaregun.git"
@@ -24,7 +27,16 @@
     "nanoid": "^5.0.6"
   },
   "devDependencies": {
+    "jsonc-parse": "^1.5.5",
     "migrations": "github:treeder/migrations",
-    "once": "github:treeder/once"
+    "once": "github:treeder/once",
+    "prettier": "^3.6.2"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "printWidth": 120
   }
 }
