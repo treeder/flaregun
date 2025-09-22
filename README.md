@@ -154,3 +154,33 @@ async scheduled(event, env, ctx) {
   }
 }
 ```
+
+## Logging
+
+You can use CloudflareLogger to get nicely formatted messages for cloudflare logging while
+using it just like console.log. Setup in `_middleware.js` like this:
+
+```js
+let rid = nanoid()
+let url = new URL(req.url)
+c.data.logger = new CloudflareLogger({ data: { requestId: rid, path: url.pathname } })
+```
+
+The extra data added above will be logged in all messages for easy filtering.
+
+Then use it:
+
+```js
+c.data.logger.log('This is a message')
+// with more data
+c.data.logger.log('This is a message', { foo: 'bar' })
+// errors
+c.data.logger.log(new Error('This is an error'))
+```
+
+If you want to add some data along the way, in middleware or during function chains:
+
+```js
+let logger = c.data.logger.with('foo', 'bar')
+logger.log('This is a message')
+```
