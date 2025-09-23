@@ -31,9 +31,18 @@ user.name = 'Jim Bean'
 // update a row
 await d1.update('users', user.id, user)
 
+// get object
+user = d1.get('users', user.id)
+
 // querying
+// simple equality queries
 let users = await d1.query('users', {
-    where: [['orgID', '=', orgID], ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
+    where: { email: 'x@y.com },
+})
+
+// more complex queries
+let users = await d1.query('users', {
+    where: [['orgId', '=', orgId], ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
     order: ['createdAt', 'asc'],
     limit: 100,
 })
@@ -41,14 +50,20 @@ let users = await d1.query('users', {
 // querying JSON data using path notation
 let users = await d1.query('users', {
   where: [['data.awesome', '=', true]],
-}
+})
+
+// counts 
+let userCount = await d1.count('users', {
+  where: { orgId }
+})
 ```
 
-### Using models for fields
+### Using models for field parsing
 
-Use models for parsing fields. This is the same format as for [Lit](https://lit.dev) properties AND you can use the
-same models for automatic [migrations](https://github.com/treeder/migrations), JSON parsing, etc. It uses
-[models](https://github.com/treeder/models) for parsing fields.
+Recommended: D1 supports using [models](https://github.com/treeder/models) to parse fields into the proper object types. This is the same format as for [Lit](https://lit.dev) properties AND you can use the
+same models for automatic [migrations](https://github.com/treeder/migrations), JSON parsing, etc. 
+
+First, define your models with JavaScript types or custom parsers (see [models](https://github.com/treeder/models) for more info). 
 
 ```js
 export class User {
@@ -80,12 +95,10 @@ export class User {
 Then use it like this:
 
 ```js
-let users = await d1.query('users', {
-    model: User,
-}
+let users = await d1.get(User, userId)
 ```
 
-This will parse the dates, JSON, etc into the proper types.
+This will parse the dates, booleans, JSON, etc into the proper types.
 
 ## Error Handler
 
