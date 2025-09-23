@@ -1,4 +1,4 @@
-import { nanoid } from "nanoid"
+import { nanoid } from 'nanoid'
 
 export class D1 {
   constructor(db) {
@@ -42,7 +42,7 @@ export class D1 {
 
   prepStmt(table, q = {}) {
     // console.log("stmt", q)
-    let s = "SELECT * FROM " + table
+    let s = 'SELECT * FROM ' + table
     let w = []
     let binds = []
     if (q.where && q.where.length > 0) {
@@ -65,13 +65,13 @@ export class D1 {
 
         i++
       }
-      s += " WHERE " + w.join(' ')
+      s += ' WHERE ' + w.join(' ')
     }
     if (q.order) {
-      s += " ORDER BY " + q.order[0] + " " + q.order[1]
+      s += ' ORDER BY ' + q.order[0] + ' ' + q.order[1]
     }
-    if (q.limit) s += " LIMIT " + q.limit
-    if (q.offset) s += " OFFSET " + q.offset
+    if (q.limit) s += ' LIMIT ' + q.limit
+    if (q.offset) s += ' OFFSET ' + q.offset
     // console.log("SQL:", s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
@@ -140,7 +140,9 @@ export class D1 {
         throw new Error('Field must be alphanumeric')
       }
     }
-    let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields.map(f => '?').join(',')})`
+    let s = `INSERT INTO ${table} (${fields.join(',')}) VALUES (${fields
+      .map((f) => '?')
+      .join(',')})`
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
     let r = await st.run()
@@ -168,7 +170,7 @@ export class D1 {
     fields.push('updatedAt')
     values.push(now)
     ob.updatedAt = now
-    let s = `UPDATE ${table} SET ${fields.map(f => f + ' = ?').join(',')} WHERE id = ?`
+    let s = `UPDATE ${table} SET ${fields.map((f) => f + ' = ?').join(',')} WHERE id = ?`
     values.push(id)
     // console.log("SQL:", s, values)
     let st = this.db.prepare(s).bind(...this.toValues(values))
@@ -179,7 +181,7 @@ export class D1 {
   }
 
   toValues(values) {
-    return values.map(v => {
+    return values.map((v) => {
       return this.toValue(v)
     })
   }
@@ -224,6 +226,66 @@ export class D1 {
       default:
         return val
     }
+  }
 
+  validate(ob, clz) {
+    function formatError(props, p, val) {
+      let t = props[p].type
+      if (typeof t == 'function') {
+        t = t.name
+      }
+      return `${p} has type ${t} but got value ${val} of type ${typeof val}`
+    }
+
+    const props = clz.properties
+    let errors = []
+    for (const p in props) {
+      const val = ob[p]
+      console.log(p, val)
+      if (val === undefined || val === null) {
+        continue
+      }
+      switch (props[p].type) {
+        case String:
+          break
+        case Number:
+          if (typeof val != 'number') {
+            errors.push(formatError(props, p, val))
+          }
+          break
+        case Boolean:
+          if (typeof val != 'boolean') {
+            errors.push(formatError(props, p, val))
+          }
+          break
+        case Date:
+          console.log(p, val, typeof val)
+          if (typeof val != 'object' || !(val instanceof Date)) {
+            errors.push(formatError(props, p, val))
+          }
+          break
+        case BigInt:
+          if (typeof val != 'object' || !(val instanceof BigInt)) {
+            errors.push(formatError(props, p, val))
+          }
+          break
+        case Object:
+          if (typeof val != 'object') {
+            errors.push(formatError(props, p, val))
+          }
+          break
+        case JSON:
+          break
+        case BigInt:
+          if (typeof val != 'object' || !(val instanceof Array)) {
+            errors.push(formatError(props, p, val))
+          }
+          break
+      }
+    }
+    if (errors.length == 0) {
+      return
+    }
+    throw new Error(errors.join('\n'))
   }
 }
