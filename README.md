@@ -197,3 +197,20 @@ If you want to add some data along the way, in middleware or during function cha
 let logger = c.data.logger.with('foo', 'bar')
 logger.log('This is a message')
 ```
+
+## Middleware
+
+If you're using Wrangler file based routing, you can add our middleware. 
+
+Add this to your root `_middleware.js`:
+
+```js
+import { timer } from 'flaregun/middleware/timer.js'
+import { cors } from 'flaregun/middleware/cors.js'
+
+export async function wrap(c) {
+  // your own things can go here
+}
+
+export const onRequest = [timer, cors, wrap]
+```
