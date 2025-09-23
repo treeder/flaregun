@@ -397,7 +397,6 @@ export class D1 {
     let errors = []
     for (const p in props) {
       const val = ob[p]
-      console.log(p, val)
       if (val === undefined || val === null) { // TODO: might want to add notnull to property definition?
         continue
       }
@@ -415,7 +414,6 @@ export class D1 {
           }
           break
         case Date:
-          console.log(p, val, typeof val)
           if (typeof val != 'object' || !(val instanceof Date)) {
             errors.push(formatError(props, p, val))
           }
