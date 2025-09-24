@@ -249,8 +249,8 @@ export class D1 {
       ob.updatedAt = now
     }
     for (let f of fields) {
-      if (!/^[a-zA-Z0-9]+$/.test(f)) {
-        throw new Error('Field must be alphanumeric')
+      if (!/^[a-zA-Z0-9_]+$/.test(f)) {
+        throw new Error(`Field ${f} must be alphanumeric`)
       }
     }
     let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
@@ -430,7 +430,7 @@ export class D1 {
           break
         case JSON:
           break
-        case BigInt:
+        case Array:
           if (typeof val != 'object' || !(val instanceof Array)) {
             errors.push(formatError(props, p, val))
           }
