@@ -8,7 +8,8 @@
     "start": "npm install && npx wrangler dev --env dev --live-reload",
     "build": "node ./bin/flaregun.js build",
     "setup": "node ./bin/flaregun.js setup",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/test.js",
+    "testkit": "npx treeder/testkit --port=8787"
   },
   "bin": "./bin/flaregun.js",
   "repository": {
@@ -31,7 +32,8 @@
   "devDependencies": {
     "migrations": "github:treeder/migrations",
     "once": "github:treeder/once",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "testkit": "github:treeder/testkit"
   },
   "prettier": {
     "tabWidth": 2,
