@@ -24,6 +24,8 @@ export class ErrorHandler {
   }
 
   async doPost(c, err) {
+    // Do not post client errors (status < 500) to the webhook.
+    if (err.status && err.status < 500) return;
     if (this.opts.postTo) {
       let postTo = this.opts.postTo
       postTo.options ||= {}
