@@ -24,6 +24,7 @@ export class ErrorHandler {
   }
 
   async doPost(c, err) {
+    if (err.status && err.status < 500) return
     if (this.opts.postTo) {
       let postTo = this.opts.postTo
       postTo.options ||= {}
