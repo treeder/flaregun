@@ -2,7 +2,6 @@
   "name": "flaregun",
   "compatibility_date": "2025-09-01",
   "main": "./dist/index.js",
-  "preview_urls": true,
   "assets": {
     "directory": "./public/",
     "binding": "ASSETS",
@@ -15,9 +14,11 @@
   },
   "env": {
     "dev": {
+      "name": "flaregun-dev",
       "vars": {
         "ENV": "dev",
       },
+      "preview_urls": true,
       "kv_namespaces": [
         {
           "binding": "KV",
@@ -60,6 +61,7 @@
       },
     },
     "prod": {
+      "name": "flaregun-prod",
       "vars": {
         "ENV": "prod",
       },

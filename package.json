@@ -5,7 +5,7 @@
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && npx wrangler dev --env dev --live-reload",
+    "start": "npm install && npx -y wrangler dev --env dev --live-reload",
     "build": "node ./bin/flaregun.js build",
     "setup": "node ./bin/flaregun.js setup",
     "test": "node test/test.js",
