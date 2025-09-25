@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs/promises'
 import path from 'path'
 import { exec } from 'child_process'
 
@@ -26,12 +26,21 @@ export async function build(args) {
   console.log('done postBuild')
 }
 
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+
 async function postBuild() {
   // check if scheduled or queue functions available
   let add = ''
   try {
     const filePath = path.resolve(process.cwd(), './functions/queue.js')
-    if (fs.existsSync(filePath)) {
+    if (await fileExists(filePath)) {
       let s = await transformFileContents(filePath, 'queue')
 
       add += `
@@ -50,7 +59,7 @@ async function postBuild() {
 
   try {
     const filePath = path.resolve(process.cwd(), './functions/scheduled.js')
-    if (fs.existsSync(filePath)) {
+    if (await fileExists(filePath)) {
       let s = await transformFileContents(filePath, 'scheduled')
 
       add += `
@@ -73,41 +82,31 @@ async function postBuild() {
   }
   const filePath = path.resolve(process.cwd(), './dist/index.js')
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error(err)
-      return
+  let data = await fs.readFile(filePath, 'utf8')
+
+  const searchString = 'var pages_template_worker_default'
+  const lines = data.split('\n')
+  let modifiedData = ''
+
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].includes(searchString)) {
+      // Add your extra lines here
+      modifiedData += lines[i] + '\n'
+      modifiedData += add
+    } else {
+      modifiedData += lines[i] + '\n'
     }
+  }
 
-    const searchString = 'var pages_template_worker_default'
-    const lines = data.split('\n')
-    let modifiedData = ''
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes(searchString)) {
-        // Add your extra lines here
-        modifiedData += lines[i] + '\n'
-        modifiedData += add
-      } else {
-        modifiedData += lines[i] + '\n'
-      }
-    }
-
-    fs.writeFile(filePath, modifiedData, 'utf8', (err) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      console.log('File modified successfully!')
-    })
-  })
+  await fs.writeFile(filePath, modifiedData, 'utf8')
+  console.log('File modified successfully!')
 }
 
 async function transformFileContents(filePath, functionName) {
-  const module = await import(filePath)
-  console.log(module)
+  // const module = await import(filePath)
+  // console.log(module)
 
-  let contents = fs.readFileSync(filePath).toString()
+  let contents = (await fs.readFile(filePath)).toString()
   let lines = contents.split('\n')
 
   let qs = ''
