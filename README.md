@@ -37,7 +37,7 @@ user = d1.get('users', user.id)
 // querying
 // simple equality queries
 let users = await d1.query('users', {
-    where: { email: 'x@y.com },
+    where: { email: 'x@y.com' },
 })
 
 // more complex queries
