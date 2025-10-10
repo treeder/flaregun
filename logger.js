@@ -7,12 +7,12 @@
 export class CloudflareLogger {
   /**
    *
-   * @param {object} options
-   * @param {object} [options.data] - additional data to send with each log
+   * @param {object} opts
+   * @param {object} [opts.data] - additional data to send with each log
    */
-  constructor(options = {}) {
-    this.data = options.data || {}
-    this.options = options
+  constructor(opts = {}) {
+    this.data = opts.data || {}
+    this.options = opts
   }
 
   /**
@@ -27,11 +27,25 @@ export class CloudflareLogger {
 
   /**
    * Just like console.log
-   * 
+   *
    * * If last param is an object, it will show up in the logs under a `data` field.
    * * If last param is an error, it will log as an error with all the error details.
    */
   log(...params) {
+    let data = this.toObject(...params)
+    if (data.level == 'error') {
+      console.error(data)
+    } else {
+      console.log(data)
+    }
+  }
+
+  /**
+   * This returns the object that will be passed to console.log()
+   *
+   * @param  {...any} params same params as log()
+   */
+  toObject(...params) {
     let data = { ...this.data, level: 'info' }
     let err = null
     // for (let p of params) {
@@ -85,12 +99,9 @@ export class CloudflareLogger {
       data.message += ' ' + m
     }
     if (!data.message) data.message = 'no message'
-    if (data.level == 'error') {
-      console.error(data)
-    } else {
-      console.log(data)
-    }
+    return data
   }
+
   async flush() {}
 
   isPlainObject(value) {

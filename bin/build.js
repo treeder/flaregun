@@ -8,15 +8,12 @@ export async function build(args) {
   let proc = exec('npx wrangler pages functions build --outdir=./dist/')
   proc.stdout.pipe(process.stdout)
   proc.stderr.pipe(process.stderr)
-  proc.on('close', (code) => {
-    console.log(`child process exited with code ${code}`)
-  })
   proc.on('error', (err) => {
     console.log(`child process error: ${err}`)
   })
   let promise = new Promise((resolve, reject) => {
     proc.on('close', (code) => {
-      console.log(`XXX child process exited with code ${code}`)
+      console.log(`child process exited with code ${code}`)
       resolve()
     })
   })

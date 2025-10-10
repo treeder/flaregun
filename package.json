@@ -9,7 +9,11 @@
     "build": "node ./bin/flaregun.js build",
     "setup": "node ./bin/flaregun.js setup",
     "test": "node test/test.js",
-    "testkit": "npx treeder/testkit --port=8787"
+    "testkit": "npx -y treeder/testkit --port=8787",
+    "deploy": "npx -y wrangler deploy --env dev",
+    "deploy:preview": "npx -y wrangler versions upload --env dev",
+    "deploy:prod": "npx -y wrangler deploy --env prod",
+    "deploy:prod:preview": "npx -y wrangler versions upload --env prod"
   },
   "bin": "./bin/flaregun.js",
   "repository": {
