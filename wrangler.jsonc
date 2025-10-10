@@ -14,7 +14,7 @@
   },
   "env": {
     "dev": {
-      "name": "flaregun-dev",
+      "name": "flaregun",
       "vars": {
         "ENV": "dev",
       },
