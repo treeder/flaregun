@@ -15,7 +15,7 @@ export class D1 {
    * let d1 = new D1(env.D1)
    * ```
    *
-   * @param {*} db
+   * @param {*} db a cloudflare d1 binding (ie: env.D1)
    */
   constructor(db) {
     this.db = db

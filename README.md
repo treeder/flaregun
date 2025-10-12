@@ -14,7 +14,8 @@ npm install treeder/flaregun
 
 ## D1 Sqlite Database
 
-This handles inserting and updating objects, assigning IDs, nested JSON objects, etc.
+Flaregun offers a great wrapper around the default D1 interface handles inserting and updating objects, assigning IDs,
+querying nested JSON objects, merge updates, etc.
 
 ```js
 import { D1 } from 'flaregun'
@@ -24,7 +25,7 @@ let d1 = new D1(env.D1) // just adds some extra functionality to the built in d1
 
 // then you can use the new functions
 // insert new data
-let user = {name: 'Jimbo', email: 'x@y.com'}
+let user = { name: 'Jimbo', email: 'x@y.com' }
 await d1.insert('users', user)
 
 user.name = 'Jim Bean'
@@ -37,14 +38,17 @@ user = d1.get('users', user.id)
 // querying
 // simple equality queries
 let users = await d1.query('users', {
-    where: { email: 'x@y.com' },
+  where: { email: 'x@y.com' },
 })
 
 // more complex queries
 let users = await d1.query('users', {
-    where: [['orgId', '=', orgId], ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
-    order: ['createdAt', 'asc'],
-    limit: 100,
+  where: [
+    ['orgId', '=', orgId],
+    ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)],
+  ],
+  order: ['createdAt', 'asc'],
+  limit: 100,
 })
 
 // querying JSON data using path notation
@@ -52,18 +56,18 @@ let users = await d1.query('users', {
   where: [['data.awesome', '=', true]],
 })
 
-// counts 
+// counts
 let userCount = await d1.count('users', {
-  where: { orgId }
+  where: { orgId },
 })
 ```
 
 ### Using models for field parsing
 
 Recommended: D1 supports using [models](https://github.com/treeder/models) to parse fields into the proper object types. This is the same format as for [Lit](https://lit.dev) properties AND you can use the
-same models for automatic [migrations](https://github.com/treeder/migrations), JSON parsing, etc. 
+same models for automatic [migrations](https://github.com/treeder/migrations), JSON parsing, etc.
 
-First, define your models with JavaScript types or custom parsers (see [models](https://github.com/treeder/models) for more info). 
+First, define your models with JavaScript types or custom parsers (see [models](https://github.com/treeder/models) for more info).
 
 ```js
 export class User {
@@ -99,6 +103,16 @@ let users = await d1.get(User, userId)
 ```
 
 This will parse the dates, booleans, JSON, etc into the proper types.
+
+## KV
+
+This is a simple wrapper that adds a few nice things like:
+
+```
+let kv = new KV(env.KV)
+await kv.putJSON('foo', { bar: 'baz' })
+let foo = await kv.getJSON('foo')
+```
 
 ## Error Handler
 
@@ -200,7 +214,7 @@ logger.log('This is a message')
 
 ## Middleware
 
-If you're using Wrangler file based routing, you can add our middleware. 
+If you're using Wrangler file based routing, you can add our middleware.
 
 Add this to your root `_middleware.js`:
 
