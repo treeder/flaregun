@@ -164,7 +164,7 @@ const scheduler = new Scheduler()
 scheduler.addEventListener('hour', myFunction)
 ```
 
-That will call `myFunction(c)` every hour. You can use minute, hour, day, week, month too.
+That will call `myFunction(c)` every hour. You can use minute, hour, day, week, month, 5minutes, 15minutes.
 
 Setup a cron trigger in your worker settings to run every minute: `*/1 * * * *`
 

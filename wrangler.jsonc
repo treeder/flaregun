@@ -7,7 +7,6 @@
     "binding": "ASSETS",
   },
   "build": {
-    // "command": "npx wrangler pages functions build --outdir=./dist/",
     "command": "node ./bin/flaregun.js build",
     "cwd": ".",
     "watch_dir": ["functions", "public"],
