@@ -15,10 +15,31 @@ export class ErrorHandler {
     this.logger = this.opts.logger || new CloudflareLogger()
   }
 
+  /**
+   * This will log the error, post an alert to a webhook if postTo is set and respond with a JSON error response.
+   *
+   * @param {*} c
+   * @param {*} err
+   * @returns
+   */
   async handle(c, err) {
+    await this.logc(c, err)
+    return Response.json({ error: { message: err.message } }, { status: err.status || 500 })
+  }
+
+  /**
+   * This will log and post to webhook, but does not generate a response. Good for use in
+   * parts where you aren't throwing to exit, but just logging and continuing.
+   *
+   * Called it logc to keep log open for the future and stay compatible with regular logging.
+   *
+   * @param {*} c
+   * @param {*} err
+   * @returns
+   */
+  async logc(c, err) {
     this.logger.log(err.message, err)
     c.waitUntil(this.doPost(c, err))
-    return Response.json({ error: { message: err.message } }, { status: err.status || 500 })
   }
 
   async doPost(c, err) {
