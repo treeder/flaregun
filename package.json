@@ -1,7 +1,7 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "3.3.14",
+  "version": "3.3.15",
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
