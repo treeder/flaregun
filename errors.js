@@ -10,9 +10,9 @@ import { CloudflareLogger } from './logger.js'
  *
  */
 export class ErrorHandler {
-  constructor(opts = {}) {
-    this.opts = opts
-    this.logger = this.opts.logger || new CloudflareLogger()
+  constructor(options = {}) {
+    this.options = options
+    this.logger = this.options.logger || new CloudflareLogger()
   }
 
   /**
@@ -45,9 +45,9 @@ export class ErrorHandler {
   async doPost(c, err) {
     // Do not post client errors (status < 500) to the webhook.
     if (err.status && err.status < 500) return
-    // console.log('POST TO:', this.opts.postTo)
-    if (this.opts.postTo) {
-      let postTo = this.opts.postTo
+    // console.log('POST TO:', this.options.postTo)
+    if (this.options.postTo) {
+      let postTo = this.options.postTo
       postTo.options ||= {}
       postTo.options.method ||= 'POST'
       let options = { ...postTo.options }
@@ -55,7 +55,7 @@ export class ErrorHandler {
       let dataStr = this.logger.data ? '\n\n' + JSON.stringify(this.logger.data, null, '  ') : ''
 
       let message = `${err.name}: ${err.message}${dataStr}\n\n${err.stack}`
-      if (this.opts.appName) message = `${this.opts.appName}\n${message}`
+      if (this.options.appName) message = `${this.options.appName}\n${message}`
 
       if (options.body) {
         options.body = options.body(message)
@@ -63,7 +63,7 @@ export class ErrorHandler {
 
       let filenameAndLineNumbers = err.stack.split('\n').find((l) => l.match(/.*:\d+:\d+/))
       // console.log('ErrorHandler: filenameAndLineNumbers:', filenameAndLineNumbers)
-      if (!this.opts.force && c.env.KV) {
+      if (!this.options.force && c.env.KV) {
         // console.log('checking KV for duplicates')
         let key = `errors/${filenameAndLineNumbers}`
         let errorKV = await c.env.KV.get(key)
