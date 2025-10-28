@@ -6,6 +6,16 @@ export async function build(args) {
   console.log('building...')
 
   let proc = exec('npx wrangler pages functions build --outdir=./dist/')
+
+  const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
+  for (const signal of signals) {
+    process.on(signal, () => {
+      console.log(`Received ${signal}. Killing child process...`)
+      proc.kill()
+      process.exit(0)
+    })
+  }
+
   proc.stdout.pipe(process.stdout)
   proc.stderr.pipe(process.stderr)
   proc.on('error', (err) => {
