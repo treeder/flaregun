@@ -46,6 +46,7 @@ export class D1 {
    * @returns
    */
   async get(table, id, q = {}) {
+    if (!id) throw new Error('get needs an id')
     if (typeof table != 'string') {
       q.model = table
     }
