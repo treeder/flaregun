@@ -2,6 +2,8 @@
 
 JavaScript helpers for Cloudflare dev services.
 
+![flaregun](https://github.com/user-attachments/assets/a2b3c31b-b228-42e6-a245-559fc0501d6d)
+
 ## Starter kit
 
 Check out [the starter kit](https://github.com/treeder/flaregun-starter) for a quick start. This will setup everything you need to run a full-stack cloudflare app.
