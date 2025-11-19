@@ -2,7 +2,7 @@
 
 JavaScript helpers for Cloudflare dev services.
 
-![flaregun](https://github.com/user-attachments/assets/a2b3c31b-b228-42e6-a245-559fc0501d6d)
+<img width="609" height="298" alt="flaregun3" src="https://github.com/user-attachments/assets/95b8eb01-fa37-4378-b209-5811b0362498" />
 
 ## Starter kit
 
