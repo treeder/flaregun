@@ -26,6 +26,33 @@ export class D1 {
     return this.db.prepare(s)
   }
 
+  async retry(fn) {
+    let attempt = 1
+    while (true) {
+      try {
+        return await fn()
+      } catch (err) {
+        if (this.shouldRetry(err, attempt)) {
+          if (this.debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
+          // Exponential backoff
+          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10))
+          attempt++
+          continue
+        }
+        throw err
+      }
+    }
+  }
+
+  shouldRetry(err, attempt) {
+    const errMsg = String(err)
+    const isRetryableError =
+      errMsg.includes('Network connection lost') ||
+      errMsg.includes('storage caused object to be reset') ||
+      errMsg.includes('reset because its code was updated')
+    return attempt <= 5 && isRetryableError
+  }
+
   /**
    * Get the table name for a class or string.
    * @param {String|class} clzOrName
@@ -50,10 +77,12 @@ export class D1 {
     if (typeof table != 'string') {
       q.model = table
     }
-    let r = await this.db
-      .prepare(`SELECT * FROM ${this.tableName(table)} where id = ?`)
-      .bind(id)
-      .first()
+    let r = await this.retry(async () => {
+      return await this.db
+        .prepare(`SELECT * FROM ${this.tableName(table)} where id = ?`)
+        .bind(id)
+        .first()
+    })
     parseModel(r, q.model, { parseJSON: true })
     return r
   }
@@ -65,10 +94,12 @@ export class D1 {
    * @returns
    */
   async delete(table, id) {
-    return await this.db
-      .prepare(`DELETE FROM ${this.tableName(table)} where id = ?`)
-      .bind(id)
-      .run()
+    return await this.retry(async () => {
+      return await this.db
+        .prepare(`DELETE FROM ${this.tableName(table)} where id = ?`)
+        .bind(id)
+        .run()
+    })
   }
 
   /**
@@ -82,8 +113,10 @@ export class D1 {
     if (typeof table != 'string') {
       q.model = table
     }
-    let st = this.prepStmt(table, q)
-    let r = await st.all()
+    let r = await this.retry(async () => {
+      let st = this.prepStmt(table, q)
+      return await st.all()
+    })
     // console.log("QUERY:", r)
     if (q.model) {
       for (let r2 of r.results) {
@@ -99,8 +132,10 @@ export class D1 {
     }
     let col = 'count(*)'
     q.columns = [col]
-    let st = this.prepStmt(table, q)
-    let r = await st.first()
+    let r = await this.retry(async () => {
+      let st = this.prepStmt(table, q)
+      return await st.first()
+    })
     console.log('COUNT:', r)
     return r[col]
   }
@@ -110,8 +145,10 @@ export class D1 {
       q.model = table
     }
     q.limit = 1
-    let st = this.prepStmt(table, q)
-    let r = await st.first()
+    let r = await this.retry(async () => {
+      let st = this.prepStmt(table, q)
+      return await st.first()
+    })
     // console.log("FIRST:", r)
     parseModel(r, q.model, { parseJSON: true })
     return r
@@ -256,8 +293,10 @@ export class D1 {
     }
     let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
     if (this.debug) console.log('SQL:', s, values)
-    let st = this.db.prepare(s).bind(...this.toValues(values))
-    let r = await st.run()
+    let r = await this.retry(async () => {
+      let st = this.db.prepare(s).bind(...this.toValues(values))
+      return await st.run()
+    })
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
@@ -310,8 +349,10 @@ export class D1 {
     let vs = this.toValues(values)
     vs.push(id)
     if (this.debug) console.log('SQL:', s, vs)
-    let st = this.db.prepare(s).bind(...vs)
-    let r = await st.run()
+    let r = await this.retry(async () => {
+      let st = this.db.prepare(s).bind(...vs)
+      return await st.run()
+    })
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
