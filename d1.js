@@ -34,9 +34,9 @@ export class D1 {
       } catch (err) {
         if (this.shouldRetry(err, attempt)) {
           if (this.debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
-          attempt++
           // Exponential backoff
-          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10)) // adjust timing
+          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10));
+          attempt++;
           continue
         }
         throw err
