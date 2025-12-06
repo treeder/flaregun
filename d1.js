@@ -35,8 +35,8 @@ export class D1 {
         if (this.shouldRetry(err, attempt)) {
           if (this.debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
           // Exponential backoff
-          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10));
-          attempt++;
+          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10))
+          attempt++
           continue
         }
         throw err
@@ -44,16 +44,13 @@ export class D1 {
     }
   }
 
-  shouldRetry(err, nextAttempt) {
+  shouldRetry(err, attempt) {
     const errMsg = String(err)
     const isRetryableError =
       errMsg.includes('Network connection lost') ||
       errMsg.includes('storage caused object to be reset') ||
       errMsg.includes('reset because its code was updated')
-    if (nextAttempt <= 5 && isRetryableError) {
-      return true
-    }
-    return false
+    return attempt <= 5 && isRetryableError
   }
 
   /**
