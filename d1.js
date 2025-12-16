@@ -415,7 +415,7 @@ export class D1 {
       // console.log("isObject:", v)
       // then we'll do JSON patch here
       // stringifying so we don't need to have to bind values
-      return { str: `IFNULL(?, json_patch(${f}, ?))`, numValues: 2 }
+      return { str: `json_patch(COALESCE(${f}, '{}'), ?)`, numValues: 1 }
     }
     return { str: '?', numValues: 1 }
   }
