@@ -190,8 +190,12 @@ export class D1 {
         for (const q2 in q.where) {
           // console.log("Q2:", q2)
           if (i > 0) w.push(' AND')
-          w.push(`${q2} = ?`)
-          binds.push(q.where[q2])
+          if (q.where[q2] === null) {
+            w.push(`${q2} IS NULL`)
+          } else {
+            w.push(`${q2} = ?`)
+            binds.push(q.where[q2])
+          }
           i++
         }
       } else {
