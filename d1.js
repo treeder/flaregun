@@ -253,7 +253,11 @@ export class D1 {
         for (const q2 in q.where) {
           // console.log("Q2:", q2)
           if (i > 0) w.push(' AND')
-          w.push(`${q2} = ?`)
+          let k = q2
+          if (q.join && !k.includes('.')) {
+            k = this.tableName(table) + '.' + k
+          }
+          w.push(`${k} = ?`)
           binds.push(q.where[q2])
           i++
         }
