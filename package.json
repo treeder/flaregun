@@ -1,19 +1,22 @@
 {
   "name": "flaregun",
   "type": "module",
-  "version": "3.4.1",
+  "version": "3.5.0",
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
     "start": "npm install && npx -y wrangler dev --env dev --live-reload",
-    "build": "node ./bin/flaregun.js build",
-    "setup": "node ./bin/flaregun.js setup",
-    "test": "node test/test.js",
-    "testkit": "npx -y treeder/testkit --port=8787",
+    "build": "npx -y treeder/flaregun build",
+    "run": "npx -y wrangler dev --env dev",
+    "test:run": "node tests/test.js",
+    "test": "npx -y treeder/testkit --port=8787",
+    "setup": "npx -y treeder/flaregun setup",
     "deploy": "npx -y wrangler deploy --env dev",
     "deploy:preview": "npx -y wrangler versions upload --env dev",
+    "deploy:dev": "npx -y wrangler deploy --env dev",
     "deploy:prod": "npx -y wrangler deploy --env prod",
-    "deploy:prod:preview": "npx -y wrangler versions upload --env prod"
+    "deploy:prod:preview": "npx -y wrangler versions upload --env prod",
+    "pushdev": "git push origin --force `git symbolic-ref --short HEAD`:dev"
   },
   "bin": "./bin/flaregun.js",
   "repository": {
@@ -30,20 +33,21 @@
     "api": "github:treeder/api",
     "dotenv": "^17.2.2",
     "jsonc-parse": "^1.5.5",
-    "models": "github:treeder/models",
+    "models": "github:treeder/models#semver:^1",
     "nanoid": "^5.0.6"
   },
   "devDependencies": {
-    "migrations": "github:treeder/migrations",
-    "once": "github:treeder/once",
+    "migrations": "github:treeder/migrations#semver:^1",
+    "once": "github:treeder/once#semver:^1",
     "prettier": "^3.6.2",
-    "testkit": "github:treeder/testkit"
+    "testkit": "github:treeder/testkit#semver:^2"
   },
   "prettier": {
     "tabWidth": 2,
     "semi": false,
     "singleQuote": true,
     "trailingComma": "all",
-    "printWidth": 120
+    "printWidth": 120,
+    "bracketSameLine": true
   }
 }

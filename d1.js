@@ -118,25 +118,37 @@ export class D1 {
       return await st.all()
     })
     // console.log("QUERY:", r)
-    if (q.model) {
+    if (q.model || q.join) {
+      // then we need to do some parsing
       for (let r2 of r.results) {
         // If we are using the join trick, we don't want to parse the model on the row itself
         // unless the row itself is the model. But if it has nested objects, we should parse them?
         // For now, let's keep it as is, but we might need to change if 'r2' is a new object structure.
         if (q.join && !q.columns) {
-           // We generated json_object columns. We need to parse them.
-           // They are strings.
-           for(let k in r2) {
-             if (typeof r2[k] === 'string' && (r2[k].startsWith('{') || r2[k].startsWith('['))) {
-               try {
-                 r2[k] = JSON.parse(r2[k])
-               } catch(e) {
-                 // ignore
-               }
-             }
-           }
+          // We generated json_object columns. We need to parse them.
+          // They are strings.
+          let i = 0
+          for (let k in r2) {
+            if (typeof r2[k] === 'string' && (r2[k].startsWith('{') || r2[k].startsWith('['))) {
+              try {
+                r2[k] = JSON.parse(r2[k])
+                if (i == 0) {
+                  if (q.model) {
+                    parseModel(r2[k], q.model, { parseJSON: true })
+                  }
+                } else if (i == 1) {
+                  // todo: should allow more than a single join
+                  if (q.join.model) {
+                    parseModel(r2[k], q.model, { parseJSON: true })
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
+            }
+          }
         } else {
-           parseModel(r2, q.model, { parseJSON: true })
+          parseModel(r2, q.model, { parseJSON: true })
         }
       }
     }
@@ -177,27 +189,27 @@ export class D1 {
     if (q.columns) {
       cols = q.columns.join(', ')
     } else if (q.join) {
-       // if columns are not specified, and we have a join, let's do the json_object trick
-       let newCols = []
-       if (typeof table !== 'string' && table.properties) {
-          newCols.push(this.jsonObjectCol(table))
-       }
+      // if columns are not specified, and we have a join, let's do the json_object trick
+      let newCols = []
+      if (typeof table !== 'string' && table.properties) {
+        newCols.push(this.jsonObjectCol(table))
+      }
 
-       let joins = []
-       if (Array.isArray(q.join)) {
-         joins = q.join
-       } else if (typeof q.join === 'object') {
-         joins = [q.join]
-       }
+      let joins = []
+      if (Array.isArray(q.join)) {
+        joins = q.join
+      } else if (typeof q.join === 'object') {
+        joins = [q.join]
+      }
 
-       for (const j of joins) {
-         if (typeof j.table !== 'string' && j.table.properties) {
-            newCols.push(this.jsonObjectCol(j.table))
-         }
-       }
-       if (newCols.length > 0) {
-         cols = newCols.join(', ')
-       }
+      for (const j of joins) {
+        if (typeof j.table !== 'string' && j.table.properties) {
+          newCols.push(this.jsonObjectCol(j.table))
+        }
+      }
+      if (newCols.length > 0) {
+        cols = newCols.join(', ')
+      }
     }
 
     let s = 'SELECT ' + cols + ' FROM ' + this.tableName(table)
@@ -476,7 +488,7 @@ export class D1 {
     // alias?
     let alias = toCamelCase(model.name)
     let fields = Object.keys(model.properties)
-    let args = fields.map(f => `'${f}', ${tableName}.${f}`).join(', ')
+    let args = fields.map((f) => `'${f}', ${tableName}.${f}`).join(', ')
     return `json_object(${args}) as "${alias}"`
   }
 }

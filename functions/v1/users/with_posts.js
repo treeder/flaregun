@@ -6,10 +6,11 @@ export async function onRequest(c) {
   // We want to fetch users and join their posts
   let users = await c.data.d1.query(User, {
     join: {
-      type: 'LEFT',
+      type: 'INNER', // can use 'LEFT' too
       table: Post,
-      on: 'users.id = posts.userId'
-    }
+      on: 'users.id = posts.userId',
+    },
   })
+  console.log('users with posts:', users)
   return Response.json({ users })
 }
