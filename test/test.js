@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { API } from 'api'
 import { TestKit } from 'testkit'
 import { test1 } from './test1.js'
+import { testJoin } from './test_join.js'
 
 // Create the context for your tests, include anything the need to run
 let apiURL = 'http://localhost:8787'
@@ -14,5 +15,5 @@ let c = {
   env: process.env,
 }
 
-let testKit = new TestKit(c, [test1])
+let testKit = new TestKit(c, [test1, testJoin])
 await testKit.run()
