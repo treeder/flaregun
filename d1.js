@@ -267,7 +267,11 @@ export class D1 {
       if (w.length > 0) s += ' WHERE ' + w.join(' ')
     }
     if (q.order) {
-      s += ' ORDER BY ' + q.order[0] + ' ' + q.order[1]
+      let o = q.order[0]
+      if (q.join && !o.includes('.')) {
+        o = this.tableName(table) + '.' + o
+      }
+      s += ' ORDER BY ' + o + ' ' + q.order[1]
     }
     if (q.limit) s += ' LIMIT ' + q.limit
     if (q.offset) s += ' OFFSET ' + q.offset
