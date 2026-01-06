@@ -5,10 +5,9 @@ export async function onRequest(c) {
   // Test join functionality
   // We want to fetch users and join their posts
   let users = await c.data.d1.query(User, {
-    columns: ['users.*', 'posts.title as postTitle'],
     join: {
       type: 'LEFT',
-      table: 'posts',
+      table: Post,
       on: 'users.id = posts.userId'
     }
   })

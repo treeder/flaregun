@@ -27,7 +27,10 @@ export async function testJoin(c) {
   let r3 = await c.api.fetch(`/v1/users/with_posts`)
   console.log('Join Result:', r3)
   assert(r3.users)
-  let joinedUser = r3.users.find(u => u.id === userId)
+  // With the new structure, we expect an object like { user: { ... }, post: { ... } }
+  // So we need to find the element where u.user.id === userId
+  let joinedUser = r3.users.find(u => u.user.id === userId)
   assert(joinedUser, 'Joined user not found')
-  assert(joinedUser.postTitle === 'Join Post', 'Join failed: postTitle mismatch')
+  assert(joinedUser.user.name === 'Join User', 'User name mismatch')
+  assert(joinedUser.post.title === 'Join Post', 'Join failed: post title mismatch')
 }

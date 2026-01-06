@@ -142,7 +142,7 @@ You can have the errors sent to a webhook:
 ```js
 const errorHandler = new ErrorHandler({
   postTo: {
-    url: 'https://x.y/webhook',
+    url: 'https://chat.googleapis.com/v1/spaces/AAQAsw9EPWU/messages?key=X&token=Y',
     options: {
       method: 'POST',
       body: (message) => {
