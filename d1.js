@@ -161,6 +161,17 @@ export class D1 {
       cols = q.columns.join(', ')
     }
     let s = 'SELECT ' + cols + ' FROM ' + this.tableName(table)
+    if (q.join) {
+      if (Array.isArray(q.join)) {
+        for (const j of q.join) {
+          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
+        }
+      } else if (typeof q.join === 'object') {
+        s += ` ${q.join.type || 'INNER'} JOIN ${this.tableName(q.join.table)} ON ${q.join.on}`
+      } else if (typeof q.join === 'string') {
+        s += ' ' + q.join
+      }
+    }
     let w = []
     let binds = []
     if (q.where) {

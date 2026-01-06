@@ -1,5 +1,6 @@
 import { ClassMigrations } from 'migrations'
 import { User } from './data/users.js'
+import { Post } from './data/posts.js'
 import { D1 } from '../d1.js'
 import { ErrorHandler } from '../errors.js'
 import { once } from 'once'
@@ -46,7 +47,7 @@ export async function wrap(c) {
 async function init(c) {
   console.log('ONE')
 
-  let migrations = new ClassMigrations(c.data.d1, [User])
+  let migrations = new ClassMigrations(c.data.d1, [User, Post])
   await migrations.run(c.data.d1)
 }
 
