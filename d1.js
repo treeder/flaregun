@@ -274,7 +274,6 @@ export class D1 {
         let i = 0
         for (const q2 of whereClause) {
           // console.log("Q2:", q2)
-          if (q2[1].toLowerCase() == 'is not null'.toLowerCase()) continue
 
           if (w.length > 0) w.push(' AND')
 
@@ -332,6 +331,8 @@ export class D1 {
     }
     if (q2[1].toLowerCase() == 'is null') {
       w.push(` ${q0} IS NULL`)
+    } else if (q2[1].toLowerCase() == 'is not null') {
+      w.push(` ${q0} IS NOT NULL`)
     } else if (q2[1].toLowerCase() == 'in') {
       w.push(` ${q0} IN (${q2[2].map((_, i) => '?').join(',')})`)
       binds.push(...this.toValues(q2[2]))
