@@ -199,9 +199,9 @@ export class D1 {
       }
 
       for (const j of joins) {
-         if (j.table) {
-             knownTables.push(this.tableName(j.table))
-         }
+        if (j.table) {
+          knownTables.push(this.tableName(j.table))
+        }
       }
     }
 
@@ -227,29 +227,29 @@ export class D1 {
 
     let s = 'SELECT ' + cols + ' FROM ' + mainTableName
     if (q.join) {
-        if (joins.length > 0) {
-             for (const j of joins) {
-                 s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
-             }
-        } else if (typeof q.join === 'string') {
-            s += ' ' + q.join
+      if (joins.length > 0) {
+        for (const j of joins) {
+          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
         }
+      } else if (typeof q.join === 'string') {
+        s += ' ' + q.join
+      }
     }
 
     let w = []
     let binds = []
 
     // Process join wheres
-    for(const j of joins) {
-        if (j.where) {
-            this.addWhere(j.where, w, binds, knownTables, this.tableName(j.table))
-        }
+    for (const j of joins) {
+      if (j.where && j.table) {
+        this.addWhere(j.where, w, binds, knownTables, this.tableName(j.table))
+      }
     }
 
     // Process main where
     if (q.where) {
-        let prefix = q.join ? mainTableName : null
-        this.addWhere(q.where, w, binds, knownTables, prefix)
+      let prefix = q.join ? mainTableName : null
+      this.addWhere(q.where, w, binds, knownTables, prefix)
     }
 
     if (w.length > 0) s += ' WHERE ' + w.join(' ')
@@ -269,45 +269,45 @@ export class D1 {
   }
 
   addWhere(whereClause, w, binds, knownTables, prefix) {
-      if (Array.isArray(whereClause)) {
-        if (whereClause.length > 0) {
-          let i = 0
-          for (const q2 of whereClause) {
-            // console.log("Q2:", q2)
-            if (q2[1].toLowerCase() == 'is not null'.toLowerCase()) if (typeof q2[2] == 'undefined') continue
-
-            if (w.length > 0) w.push(' AND')
-
-            if (q2[1].toLowerCase() == 'or') {
-              let w1 = this.singleW(q2[0], knownTables, prefix)
-              let w2 = this.singleW(q2[2], knownTables, prefix)
-              w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
-              binds.push(...w1.binds, ...w2.binds)
-            } else {
-              let w1 = this.singleW(q2, knownTables, prefix)
-              w.push(w1.w.join(' '))
-              binds.push(...w1.binds)
-            }
-            i++
-          }
-        }
-      } else if (typeof whereClause === 'object') {
-        // if where is an object, then just exact match
+    if (Array.isArray(whereClause)) {
+      if (whereClause.length > 0) {
         let i = 0
-        for (const q2 in whereClause) {
+        for (const q2 of whereClause) {
           // console.log("Q2:", q2)
+          if (q2[1].toLowerCase() == 'is not null'.toLowerCase()) continue
+
           if (w.length > 0) w.push(' AND')
-          let k = q2
-          if (prefix && !k.includes('.')) {
-            k = prefix + '.' + k
+
+          if (q2[1].toLowerCase() == 'or') {
+            let w1 = this.singleW(q2[0], knownTables, prefix)
+            let w2 = this.singleW(q2[2], knownTables, prefix)
+            w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
+            binds.push(...w1.binds, ...w2.binds)
+          } else {
+            let w1 = this.singleW(q2, knownTables, prefix)
+            w.push(w1.w.join(' '))
+            binds.push(...w1.binds)
           }
-          w.push(`${k} = ?`)
-          binds.push(whereClause[q2])
           i++
         }
-      } else {
-        throw new Error("Unknown type for 'where', must be an array or object")
       }
+    } else if (typeof whereClause === 'object') {
+      // if where is an object, then just exact match
+      let i = 0
+      for (const q2 in whereClause) {
+        // console.log("Q2:", q2)
+        if (w.length > 0) w.push(' AND')
+        let k = q2
+        if (prefix && !k.includes('.')) {
+          k = prefix + '.' + k
+        }
+        w.push(`${k} = ?`)
+        binds.push(whereClause[q2])
+        i++
+      }
+    } else {
+      throw new Error("Unknown type for 'where', must be an array or object")
+    }
   }
 
   singleW(q2, knownTables = [], prefix = null) {
@@ -317,17 +317,17 @@ export class D1 {
 
     // Auto prefix
     if (prefix && !q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
-        q0 = prefix + '.' + q0
+      q0 = prefix + '.' + q0
     }
 
     if (q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
       let split = q0.split('.')
       // Check if it's a known table
       if (knownTables.includes(split[0])) {
-          // It's a table column, keep as is
+        // It's a table column, keep as is
       } else {
-          // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
-          q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
+        // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
+        q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
       }
     }
     if (q2[1].toLowerCase() == 'is null') {
