@@ -16,8 +16,8 @@ export async function onRequestGet(c) {
     join: {
       type: 'INNER',
       table: User,
-      on: ['id', '=', 'postId'],
-      where: [['userId', '=', userId]],
+      on: ['userId', '=', 'id'],
+      where: [['id', '=', userId]],
     },
   })
   // console.log('users with filtered posts:', users)
