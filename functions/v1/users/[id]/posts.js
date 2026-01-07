@@ -1,7 +1,9 @@
-import { User } from '../../data/users.js'
-import { Post } from '../../data/posts.js'
+import { User } from '../../../data/users.js'
+import { Post } from '../../../data/posts.js'
 
 export async function onRequestGet(c) {
+  let userId = c.params.id
+
   let { searchParams } = new URL(c.request.url)
   let title = searchParams.get('title')
   let where = []
@@ -11,20 +13,13 @@ export async function onRequestGet(c) {
 
   // Test join functionality with where clause
   let posts = await c.data.d1.query(Post, {
-    where,
     join: {
       type: 'INNER',
       table: User,
-      on: ['userId', '=', 'id'],
+      on: ['id', '=', 'postId'],
+      where: [['userId', '=', userId]],
     },
   })
   // console.log('users with filtered posts:', users)
   return Response.json({ posts })
-}
-
-export async function onRequestPost(c) {
-  let input = await c.request.json()
-  let post = input.post
-  await c.data.d1.insert(Post, post)
-  return Response.json({ post })
 }

@@ -4,13 +4,13 @@ import { Post } from '../../data/posts.js'
 export async function onRequest(c) {
   // Test join functionality
   // We want to fetch users and join their posts
-  let users = await c.data.d1.query(User, {
+  let posts = await c.data.d1.query(Post, {
     join: {
       type: 'INNER', // can use 'LEFT' too
-      table: Post,
-      on: 'users.id = posts.userId',
+      table: User,
+      on: ['userId', '=', 'id'],
     },
   })
-  console.log('users with posts:', users)
-  return Response.json({ users })
+  console.log('posts with users:', posts)
+  return Response.json({ users: posts })
 }

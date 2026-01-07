@@ -24,7 +24,7 @@ export async function testJoin(c) {
   assert(r2.post)
 
   // Test join
-  let r3 = await c.api.fetch(`/v1/users/with_posts`)
+  let r3 = await c.api.fetch(`/v1/posts/with_users`)
   console.log('Join Result:', r3)
   assert(r3.users)
   // With the new structure, we expect an object like { user: { ... }, post: { ... } }
