@@ -229,7 +229,14 @@ export class D1 {
     if (q.join) {
       if (joins.length > 0) {
         for (const j of joins) {
-          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
+          let onClause = j.on
+          if (Array.isArray(j.on)) {
+            let left = this.processCol(j.on[0], knownTables, mainTableName)
+            let op = j.on[1]
+            let right = this.processCol(j.on[2], knownTables, this.tableName(j.table))
+            onClause = `${left} ${op} ${right}`
+          }
+          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${onClause}`
         }
       } else if (typeof q.join === 'string') {
         s += ' ' + q.join
@@ -309,10 +316,8 @@ export class D1 {
     }
   }
 
-  singleW(q2, knownTables = [], prefix = null) {
-    let w = []
-    let binds = []
-    let q0 = q2[0]
+  processCol(col, knownTables = [], prefix = null) {
+    let q0 = col
 
     // Auto prefix
     if (prefix && !q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
@@ -329,6 +334,14 @@ export class D1 {
         q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
       }
     }
+    return q0
+  }
+
+  singleW(q2, knownTables = [], prefix = null) {
+    let w = []
+    let binds = []
+    let q0 = this.processCol(q2[0], knownTables, prefix)
+
     if (q2[1].toLowerCase() == 'is null') {
       w.push(` ${q0} IS NULL`)
     } else if (q2[1].toLowerCase() == 'is not null') {
