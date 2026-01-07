@@ -185,6 +185,26 @@ export class D1 {
 
   prepStmt(table, q = {}) {
     // console.log("stmt", q)
+    let mainTableName = this.tableName(table)
+    let knownTables = [mainTableName]
+    let joins = []
+
+    if (q.join) {
+      if (Array.isArray(q.join)) {
+        joins = q.join
+      } else if (typeof q.join === 'object') {
+        joins = [q.join]
+      } else if (typeof q.join === 'string') {
+        // string join, ignore for object processing
+      }
+
+      for (const j of joins) {
+        if (j.table) {
+          knownTables.push(this.tableName(j.table))
+        }
+      }
+    }
+
     let cols = '*'
     if (q.columns) {
       cols = q.columns.join(', ')
@@ -193,13 +213,6 @@ export class D1 {
       let newCols = []
       if (typeof table !== 'string' && table.properties) {
         newCols.push(this.jsonObjectCol(table))
-      }
-
-      let joins = []
-      if (Array.isArray(q.join)) {
-        joins = q.join
-      } else if (typeof q.join === 'object') {
-        joins = [q.join]
       }
 
       for (const j of joins) {
@@ -212,64 +225,39 @@ export class D1 {
       }
     }
 
-    let s = 'SELECT ' + cols + ' FROM ' + this.tableName(table)
+    let s = 'SELECT ' + cols + ' FROM ' + mainTableName
     if (q.join) {
-      if (Array.isArray(q.join)) {
-        for (const j of q.join) {
+      if (joins.length > 0) {
+        for (const j of joins) {
           s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
         }
-      } else if (typeof q.join === 'object') {
-        s += ` ${q.join.type || 'INNER'} JOIN ${this.tableName(q.join.table)} ON ${q.join.on}`
       } else if (typeof q.join === 'string') {
         s += ' ' + q.join
       }
     }
+
     let w = []
     let binds = []
-    if (q.where) {
-      if (Array.isArray(q.where)) {
-        if (q.where && q.where.length > 0) {
-          let i = 0
-          for (const q2 of q.where) {
-            // console.log("Q2:", q2)
-            if (q2[1].toLowerCase() == 'IS NOT NULL'.toLowerCase()) if (typeof q2[2] == 'undefined') continue
-            if (i > 0) w.push(' AND')
-            if (q2[1].toLowerCase() == 'or') {
-              let w1 = this.singleW(q2[0])
-              let w2 = this.singleW(q2[2])
-              w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
-              binds.push(...w1.binds, ...w2.binds)
-            } else {
-              let w1 = this.singleW(q2)
-              w.push(w1.w.join(' '))
-              binds.push(...w1.binds)
-            }
-            i++
-          }
-        }
-      } else if (typeof q.where === 'object') {
-        // if where is an object, then just exact match
-        let i = 0
-        for (const q2 in q.where) {
-          // console.log("Q2:", q2)
-          if (i > 0) w.push(' AND')
-          let k = q2
-          if (q.join && !k.includes('.')) {
-            k = this.tableName(table) + '.' + k
-          }
-          w.push(`${k} = ?`)
-          binds.push(q.where[q2])
-          i++
-        }
-      } else {
-        throw new Error("Unknown type for 'where', must be an array or object")
+
+    // Process join wheres
+    for (const j of joins) {
+      if (j.where && j.table) {
+        this.addWhere(j.where, w, binds, knownTables, this.tableName(j.table))
       }
-      if (w.length > 0) s += ' WHERE ' + w.join(' ')
     }
+
+    // Process main where
+    if (q.where) {
+      let prefix = q.join ? mainTableName : null
+      this.addWhere(q.where, w, binds, knownTables, prefix)
+    }
+
+    if (w.length > 0) s += ' WHERE ' + w.join(' ')
+
     if (q.order) {
       let o = q.order[0]
       if (q.join && !o.includes('.')) {
-        o = this.tableName(table) + '.' + o
+        o = mainTableName + '.' + o
       }
       s += ' ORDER BY ' + o + ' ' + q.order[1]
     }
@@ -280,14 +268,67 @@ export class D1 {
     return st
   }
 
-  singleW(q2) {
+  addWhere(whereClause, w, binds, knownTables, prefix) {
+    if (Array.isArray(whereClause)) {
+      if (whereClause.length > 0) {
+        let i = 0
+        for (const q2 of whereClause) {
+          // console.log("Q2:", q2)
+          if (q2[1].toLowerCase() == 'is not null'.toLowerCase()) continue
+
+          if (w.length > 0) w.push(' AND')
+
+          if (q2[1].toLowerCase() == 'or') {
+            let w1 = this.singleW(q2[0], knownTables, prefix)
+            let w2 = this.singleW(q2[2], knownTables, prefix)
+            w.push(`(${w1.w.join(' ')} OR ${w2.w.join(' ')})`)
+            binds.push(...w1.binds, ...w2.binds)
+          } else {
+            let w1 = this.singleW(q2, knownTables, prefix)
+            w.push(w1.w.join(' '))
+            binds.push(...w1.binds)
+          }
+          i++
+        }
+      }
+    } else if (typeof whereClause === 'object') {
+      // if where is an object, then just exact match
+      let i = 0
+      for (const q2 in whereClause) {
+        // console.log("Q2:", q2)
+        if (w.length > 0) w.push(' AND')
+        let k = q2
+        if (prefix && !k.includes('.')) {
+          k = prefix + '.' + k
+        }
+        w.push(`${k} = ?`)
+        binds.push(whereClause[q2])
+        i++
+      }
+    } else {
+      throw new Error("Unknown type for 'where', must be an array or object")
+    }
+  }
+
+  singleW(q2, knownTables = [], prefix = null) {
     let w = []
     let binds = []
     let q0 = q2[0]
-    if (q2[0].includes('.') && !(q2[0].includes('$') || q2[0].includes('('))) {
-      // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
-      let split = q2[0].split('.')
-      q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
+
+    // Auto prefix
+    if (prefix && !q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
+      q0 = prefix + '.' + q0
+    }
+
+    if (q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
+      let split = q0.split('.')
+      // Check if it's a known table
+      if (knownTables.includes(split[0])) {
+        // It's a table column, keep as is
+      } else {
+        // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
+        q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
+      }
     }
     if (q2[1].toLowerCase() == 'is null') {
       w.push(` ${q0} IS NULL`)

@@ -8,7 +8,7 @@
     "start": "npm install && npx -y wrangler dev --env dev --live-reload",
     "build": "npx -y treeder/flaregun build",
     "run": "npx -y wrangler dev --env dev",
-    "test:run": "node tests/test.js",
+    "test:run": "node test/test.js",
     "test": "npx -y treeder/testkit --port=8787",
     "setup": "npx -y treeder/flaregun setup",
     "deploy": "npx -y wrangler deploy --env dev",
@@ -31,7 +31,7 @@
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
     "api": "github:treeder/api",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "jsonc-parse": "^1.5.5",
     "models": "github:treeder/models#semver:^1",
     "nanoid": "^5.0.6"
