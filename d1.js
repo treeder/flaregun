@@ -229,7 +229,19 @@ export class D1 {
     if (q.join) {
       if (joins.length > 0) {
         for (const j of joins) {
-          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${j.on}`
+          let on = j.on
+          if (Array.isArray(on)) {
+            let left = on[0]
+            let right = on[1]
+            if (!left.includes('.')) {
+              left = mainTableName + '.' + left
+            }
+            if (!right.includes('.')) {
+              right = this.tableName(j.table) + '.' + right
+            }
+            on = left + ' = ' + right
+          }
+          s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${on}`
         }
       } else if (typeof q.join === 'string') {
         s += ' ' + q.join
