@@ -1,0 +1,674 @@
+
+> flaregun@3.5.8 test
+> npx -y treeder/testkit --port=8787
+
+🚀 Starting server process...
+
+> flaregun@3.5.8 run
+> npx -y wrangler dev --env dev
+
+
+ ⛅️ wrangler 4.58.0
+───────────────────
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mProcessing wrangler.jsonc configuration:[0m
+
+
+    - "env.dev" environment configuration
+      - Unexpected fields found in env.dev.kv_namespaces[0] field: "title"
+
+
+[custom build] Running: node ./bin/flaregun.js build
+[custom build] building...
+[custom build]
+[custom build]
+[custom build]  ⛅️ wrangler 4.58.0
+[custom build] ───────────────────
+[custom build]
+[custom build] ✨ Compiled Worker successfully
+[custom build]
+[custom build] child process exited with code 0
+[custom build]
+[custom build] done building
+[custom build]
+[custom build] File modified successfully!
+[custom build]
+[custom build] done postBuild
+[custom build]
+Your Worker has access to the following bindings:
+Binding                                            Resource                  Mode
+env.KV (0a5bdf2a494a4d8cb0d1d5d8e26827f7)          KV Namespace              local
+env.QUEUE (flaregun-dev)                           Queue                     local
+env.D1 (flaregun-dev)                              D1 Database               local
+env.R2 (flaregun-dev)                              R2 Bucket                 local
+env.ASSETS                                         Assets                    local
+env.ENV ("dev")                                    Environment Variable      local
+
+The file functions,public changed, restarting build...
+[custom build] Running: node ./bin/flaregun.js build
+[custom build] building...
+[custom build]
+[custom build]
+[custom build]  ⛅️ wrangler 4.58.0
+[custom build] ───────────────────
+[custom build]
+[custom build] ✨ Compiled Worker successfully
+[custom build]
+[custom build] child process exited with code 0
+[custom build]
+[custom build] done building
+[custom build]
+[custom build] File modified successfully!
+[custom build]
+[custom build] done postBuild
+[custom build]
+⎔ Starting local server...
+[wrangler:info] Ready on http://localhost:8787
+ONE
+Running migrations...
+once
+migrations complete
+{ message: 'end of request', duration: 20 }
+✅ URL http://localhost:8787 is up and running!
+
+🏃 Running tests...
+[wrangler:info] GET / 200 OK (3593ms)
+
+> flaregun@3.5.8 test:run
+> node test/test.js
+
+SQL: INSERT INTO users (name, email, id, createdAt, updatedAt) VALUES (?,?,?,?,?) [
+  'John Wick',
+  'john@wick.com',
+  'lOUXdNMmU4HsXAvwhlQrD',
+  '2026-01-12T06:01:25.177Z',
+  '2026-01-12T06:01:25.177Z'
+]
+{ message: 'end of request', duration: 9 }
+[wrangler:info] POST /v1/users 200 OK (14ms)
+r: {
+  user: {
+    name: 'John Wick',
+    email: 'john@wick.com',
+    id: 'lOUXdNMmU4HsXAvwhlQrD',
+    createdAt: '2026-01-12T06:01:25.177Z',
+    updatedAt: '2026-01-12T06:01:25.177Z'
+  }
+}
+{ message: 'end of request', duration: 7 }
+[wrangler:info] GET /v1/users/lOUXdNMmU4HsXAvwhlQrD 200 OK (12ms)
+r2: {
+  user: {
+    id: 'lOUXdNMmU4HsXAvwhlQrD',
+    createdAt: '2026-01-12T06:01:25.177Z',
+    updatedAt: '2026-01-12T06:01:25.177Z',
+    name: 'John Wick',
+    email: 'john@wick.com',
+    age: null,
+    data: null
+  }
+}
+SQL: INSERT INTO users (name, email, id, createdAt, updatedAt) VALUES (?,?,?,?,?) [
+  'Join User',
+  'join@example.com',
+  '9tP7yfVpG4HOsKKUwhTFQ',
+  '2026-01-12T06:01:25.220Z',
+  '2026-01-12T06:01:25.220Z'
+]
+{ message: 'end of request', duration: 5 }
+[wrangler:info] POST /v1/users 200 OK (9ms)
+SQL: INSERT INTO posts (userId, title, content, id, createdAt, updatedAt) VALUES (?,?,?,?,?,?) [
+  '9tP7yfVpG4HOsKKUwhTFQ',
+  'Join Post',
+  'This is a post for testing joins',
+  'PyLG8FjXx7Qd1Zvcg4aQh',
+  '2026-01-12T06:01:25.234Z',
+  '2026-01-12T06:01:25.234Z'
+]
+{ message: 'end of request', duration: 5 }
+[wrangler:info] POST /v1/posts 200 OK (10ms)
+SQL: SELECT CASE WHEN posts.id IS NULL THEN NULL ELSE json_object('id', posts.id, 'userId', posts.userId, 'title', posts.title, 'content', posts.content, 'createdAt', posts.createdAt, 'updatedAt', posts.updatedAt) END as "post", CASE WHEN users.id IS NULL THEN NULL ELSE json_object('id', users.id, 'createdAt', users.createdAt, 'updatedAt', users.updatedAt, 'name', users.name, 'email', users.email, 'age', users.age, 'data', users.data) END as "user" FROM posts INNER JOIN users ON posts.userId = users.id []
+posts with users: [
+  {
+    post: {
+      id: 'zH63RA1RCx46h5lN1BPVL',
+      userId: '3G7XsQMKO4ZHA8h1heeb2',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:29:20.795Z,
+      updatedAt: 2026-01-12T01:29:20.795Z
+    },
+    user: {
+      id: '3G7XsQMKO4ZHA8h1heeb2',
+      createdAt: 2026-01-12T01:29:20.780Z,
+      updatedAt: 2026-01-12T01:29:20.780Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'HiBzmxBICLpOORv10OnqM',
+      userId: 'DVNM--z2RECKZKL8-843C',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:29:20.840Z,
+      updatedAt: 2026-01-12T01:29:20.840Z
+    },
+    user: {
+      id: 'DVNM--z2RECKZKL8-843C',
+      createdAt: 2026-01-12T01:29:20.825Z,
+      updatedAt: 2026-01-12T01:29:20.825Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'RaDbjuCmEWxNNkMM25YUe',
+      userId: 'DVNM--z2RECKZKL8-843C',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:29:20.854Z,
+      updatedAt: 2026-01-12T01:29:20.854Z
+    },
+    user: {
+      id: 'DVNM--z2RECKZKL8-843C',
+      createdAt: 2026-01-12T01:29:20.825Z,
+      updatedAt: 2026-01-12T01:29:20.825Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: '2welxmOmiPS6xma4i8OHK',
+      userId: 'ax6cZ1iUguk5RAb3FNYlt',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:31:17.110Z,
+      updatedAt: 2026-01-12T01:31:17.110Z
+    },
+    user: {
+      id: 'ax6cZ1iUguk5RAb3FNYlt',
+      createdAt: 2026-01-12T01:31:17.097Z,
+      updatedAt: 2026-01-12T01:31:17.097Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'AQxVRgfoi-n5GEtrfYi8m',
+      userId: '-aPdsB26RQitOiOiSGUp1',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:31:17.156Z,
+      updatedAt: 2026-01-12T01:31:17.156Z
+    },
+    user: {
+      id: '-aPdsB26RQitOiOiSGUp1',
+      createdAt: 2026-01-12T01:31:17.143Z,
+      updatedAt: 2026-01-12T01:31:17.143Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'UI2SotWTVi1pRXPkNxodV',
+      userId: '-aPdsB26RQitOiOiSGUp1',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:31:17.169Z,
+      updatedAt: 2026-01-12T01:31:17.169Z
+    },
+    user: {
+      id: '-aPdsB26RQitOiOiSGUp1',
+      createdAt: 2026-01-12T01:31:17.143Z,
+      updatedAt: 2026-01-12T01:31:17.143Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: '4jgN84C2dDVptFrcRfzx_',
+      userId: 'TDPVLcRcCey3q_kUSShcr',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:31:46.017Z,
+      updatedAt: 2026-01-12T01:31:46.017Z
+    },
+    user: {
+      id: 'TDPVLcRcCey3q_kUSShcr',
+      createdAt: 2026-01-12T01:31:46.004Z,
+      updatedAt: 2026-01-12T01:31:46.004Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'aEPvl2uMJnmP7dzQdKI1J',
+      userId: 'Q0bu_4TKx3sLW_UecZBDJ',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:31:46.063Z,
+      updatedAt: 2026-01-12T01:31:46.063Z
+    },
+    user: {
+      id: 'Q0bu_4TKx3sLW_UecZBDJ',
+      createdAt: 2026-01-12T01:31:46.049Z,
+      updatedAt: 2026-01-12T01:31:46.049Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: '3bOpQfop09bFehycIJtvx',
+      userId: 'Q0bu_4TKx3sLW_UecZBDJ',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:31:46.078Z,
+      updatedAt: 2026-01-12T01:31:46.078Z
+    },
+    user: {
+      id: 'Q0bu_4TKx3sLW_UecZBDJ',
+      createdAt: 2026-01-12T01:31:46.049Z,
+      updatedAt: 2026-01-12T01:31:46.049Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'ng5CM3bFC3OFoSq4EgT92',
+      userId: 'jGIM-l04LqcFuid2bPFLY',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:32:20.080Z,
+      updatedAt: 2026-01-12T01:32:20.080Z
+    },
+    user: {
+      id: 'jGIM-l04LqcFuid2bPFLY',
+      createdAt: 2026-01-12T01:32:20.066Z,
+      updatedAt: 2026-01-12T01:32:20.066Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'nWV_Le8Wk-lz3L1UtQKce',
+      userId: 'aIkk0IOoaMNt5EHXElUpG',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:32:20.130Z,
+      updatedAt: 2026-01-12T01:32:20.130Z
+    },
+    user: {
+      id: 'aIkk0IOoaMNt5EHXElUpG',
+      createdAt: 2026-01-12T01:32:20.116Z,
+      updatedAt: 2026-01-12T01:32:20.116Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'm_A2XIP6Pah5CU8q3nMzq',
+      userId: 'aIkk0IOoaMNt5EHXElUpG',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:32:20.146Z,
+      updatedAt: 2026-01-12T01:32:20.146Z
+    },
+    user: {
+      id: 'aIkk0IOoaMNt5EHXElUpG',
+      createdAt: 2026-01-12T01:32:20.116Z,
+      updatedAt: 2026-01-12T01:32:20.116Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'Kxpx31qh1oxPFop-EVmmZ',
+      userId: '4ETD9w-R8v0N7BEaRYzc4',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:32:46.767Z,
+      updatedAt: 2026-01-12T01:32:46.767Z
+    },
+    user: {
+      id: '4ETD9w-R8v0N7BEaRYzc4',
+      createdAt: 2026-01-12T01:32:46.753Z,
+      updatedAt: 2026-01-12T01:32:46.753Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'Y_1stmYf_9WYsiuN5wlp4',
+      userId: 'Bnxv-BuGlCF6M1J9oB-Yt',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:32:46.814Z,
+      updatedAt: 2026-01-12T01:32:46.814Z
+    },
+    user: {
+      id: 'Bnxv-BuGlCF6M1J9oB-Yt',
+      createdAt: 2026-01-12T01:32:46.802Z,
+      updatedAt: 2026-01-12T01:32:46.802Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'PfkREEcqjW4Q0ytt41-T8',
+      userId: 'Bnxv-BuGlCF6M1J9oB-Yt',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:32:46.828Z,
+      updatedAt: 2026-01-12T01:32:46.828Z
+    },
+    user: {
+      id: 'Bnxv-BuGlCF6M1J9oB-Yt',
+      createdAt: 2026-01-12T01:32:46.802Z,
+      updatedAt: 2026-01-12T01:32:46.802Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'f_CWbQb2b7oQfvTEce730',
+      userId: '3KGUknKJzN_kSxhzDuzJB',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T01:35:41.088Z,
+      updatedAt: 2026-01-12T01:35:41.088Z
+    },
+    user: {
+      id: '3KGUknKJzN_kSxhzDuzJB',
+      createdAt: 2026-01-12T01:35:41.071Z,
+      updatedAt: 2026-01-12T01:35:41.071Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'dFiTqdHEv1hncdVpImjdc',
+      userId: 'grtUVn5mbhD7qovajqpvb',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T01:35:41.137Z,
+      updatedAt: 2026-01-12T01:35:41.137Z
+    },
+    user: {
+      id: 'grtUVn5mbhD7qovajqpvb',
+      createdAt: 2026-01-12T01:35:41.123Z,
+      updatedAt: 2026-01-12T01:35:41.123Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'CW6SyNPLZmmGN3jBnM7Xk',
+      userId: 'grtUVn5mbhD7qovajqpvb',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T01:35:41.152Z,
+      updatedAt: 2026-01-12T01:35:41.152Z
+    },
+    user: {
+      id: 'grtUVn5mbhD7qovajqpvb',
+      createdAt: 2026-01-12T01:35:41.123Z,
+      updatedAt: 2026-01-12T01:35:41.123Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'q4SQEtB7MS3KlZHlU1BKM',
+      userId: 'yjzyv4KRRRmMn0uaAU32x',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T05:58:31.149Z,
+      updatedAt: 2026-01-12T05:58:31.149Z
+    },
+    user: {
+      id: 'yjzyv4KRRRmMn0uaAU32x',
+      createdAt: 2026-01-12T05:58:31.123Z,
+      updatedAt: 2026-01-12T05:58:31.123Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'kYf-HMcEJhtLVwCR8Xisc',
+      userId: 'W8J2zY1gYORoqsaCcJngo',
+      title: 'Wanted Post',
+      content: 'This is the post we want',
+      createdAt: 2026-01-12T05:58:31.260Z,
+      updatedAt: 2026-01-12T05:58:31.260Z
+    },
+    user: {
+      id: 'W8J2zY1gYORoqsaCcJngo',
+      createdAt: 2026-01-12T05:58:31.232Z,
+      updatedAt: 2026-01-12T05:58:31.232Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'AWvx1ppIioJpb2c6HVXkW',
+      userId: 'W8J2zY1gYORoqsaCcJngo',
+      title: 'Unwanted Post',
+      content: 'This is the post we do not want',
+      createdAt: 2026-01-12T05:58:31.313Z,
+      updatedAt: 2026-01-12T05:58:31.313Z
+    },
+    user: {
+      id: 'W8J2zY1gYORoqsaCcJngo',
+      createdAt: 2026-01-12T05:58:31.232Z,
+      updatedAt: 2026-01-12T05:58:31.232Z,
+      name: 'Join User 2',
+      email: 'join2@example.com',
+      age: null,
+      data: null
+    }
+  },
+  {
+    post: {
+      id: 'PyLG8FjXx7Qd1Zvcg4aQh',
+      userId: '9tP7yfVpG4HOsKKUwhTFQ',
+      title: 'Join Post',
+      content: 'This is a post for testing joins',
+      createdAt: 2026-01-12T06:01:25.234Z,
+      updatedAt: 2026-01-12T06:01:25.234Z
+    },
+    user: {
+      id: '9tP7yfVpG4HOsKKUwhTFQ',
+      createdAt: 2026-01-12T06:01:25.220Z,
+      updatedAt: 2026-01-12T06:01:25.220Z,
+      name: 'Join User',
+      email: 'join@example.com',
+      age: null,
+      data: null
+    }
+  }
+]
+{ message: 'end of request', duration: 36 }
+[wrangler:info] GET /v1/posts/with_users 200 OK (45ms)
+Join Result: {
+  users: [
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] }
+  ]
+}
+SQL: INSERT INTO users (name, email, id, createdAt, updatedAt) VALUES (?,?,?,?,?) [
+  'Join User 2',
+  'join2@example.com',
+  '0JxYv8xezmCnN-KLsbCo4',
+  '2026-01-12T06:01:25.304Z',
+  '2026-01-12T06:01:25.304Z'
+]
+{ message: 'end of request', duration: 7 }
+[wrangler:info] POST /v1/users 200 OK (10ms)
+SQL: INSERT INTO posts (userId, title, content, id, createdAt, updatedAt) VALUES (?,?,?,?,?,?) [
+  '0JxYv8xezmCnN-KLsbCo4',
+  'Wanted Post',
+  'This is the post we want',
+  'K2MN4shceeeJ9_Gjqls4S',
+  '2026-01-12T06:01:25.318Z',
+  '2026-01-12T06:01:25.318Z'
+]
+{ message: 'end of request', duration: 4 }
+[wrangler:info] POST /v1/posts 200 OK (8ms)
+SQL: INSERT INTO posts (userId, title, content, id, createdAt, updatedAt) VALUES (?,?,?,?,?,?) [
+  '0JxYv8xezmCnN-KLsbCo4',
+  'Unwanted Post',
+  'This is the post we do not want',
+  'z6ZDX1MyhlvGUKp99OykB',
+  '2026-01-12T06:01:25.330Z',
+  '2026-01-12T06:01:25.330Z'
+]
+{ message: 'end of request', duration: 3 }
+[wrangler:info] POST /v1/posts 200 OK (8ms)
+SQL: SELECT CASE WHEN posts.id IS NULL THEN NULL ELSE json_object('id', posts.id, 'userId', posts.userId, 'title', posts.title, 'content', posts.content, 'createdAt', posts.createdAt, 'updatedAt', posts.updatedAt) END as "post", CASE WHEN users.id IS NULL THEN NULL ELSE json_object('id', users.id, 'createdAt', users.createdAt, 'updatedAt', users.updatedAt, 'name', users.name, 'email', users.email, 'age', users.age, 'data', users.data) END as "user" FROM posts INNER JOIN users ON posts.userId = users.id WHERE  posts.title = ? [ 'Wanted Post' ]
+[wrangler:info] GET /v1/posts 200 OK (9ms)
+{ message: 'end of request', duration: 5 }
+Filtered Join Result: {
+  posts: [
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] },
+    { post: [Object], user: [Object] }
+  ]
+}
+SQL: INSERT INTO users (name, email, age, id, createdAt, updatedAt) VALUES (?,?,?,?,?,?) [
+  'Null Age User',
+  'nullage@example.com',
+  null,
+  'xQ5sYWGcUVXRUhrhu92iO',
+  '2026-01-12T06:01:25.356Z',
+  '2026-01-12T06:01:25.356Z'
+]
+{ message: 'end of request', duration: 4 }
+[wrangler:info] POST /v1/users 200 OK (8ms)
+SQL: INSERT INTO users (name, email, age, id, createdAt, updatedAt) VALUES (?,?,?,?,?,?) [
+  'Age 25 User',
+  'age25@example.com',
+  25,
+  'ewDKHbTih4H82EbV0Ikmb',
+  '2026-01-12T06:01:25.366Z',
+  '2026-01-12T06:01:25.366Z'
+]
+{ message: 'end of request', duration: 4 }
+[wrangler:info] POST /v1/users 200 OK (8ms)
+SQL: SELECT * FROM users WHERE  age IS NULL []
+{ message: 'end of request', duration: 4 }
+[wrangler:info] POST /v1/users/query 200 OK (8ms)
+SQL: SELECT * FROM users WHERE  age IS NOT NULL []
+{ message: 'end of request', duration: 4 }
+[wrangler:info] POST /v1/users/query 200 OK (8ms)
+SQL: INSERT INTO users (name, email, id, createdAt, updatedAt) VALUES (?,?,?,?,?) [
+  'Left Join User 1768197685394',
+  'leftjoin1768197685394@example.com',
+  'ntSzgR5pE6NFwL-iBnZM6',
+  '2026-01-12T06:01:25.400Z',
+  '2026-01-12T06:01:25.400Z'
+]
+{ message: 'end of request', duration: 5 }
+[wrangler:info] POST /v1/users 200 OK (10ms)
+SQL: SELECT CASE WHEN users.id IS NULL THEN NULL ELSE json_object('id', users.id, 'createdAt', users.createdAt, 'updatedAt', users.updatedAt, 'name', users.name, 'email', users.email, 'age', users.age, 'data', users.data) END as "user", CASE WHEN posts.id IS NULL THEN NULL ELSE json_object('id', posts.id, 'userId', posts.userId, 'title', posts.title, 'content', posts.content, 'createdAt', posts.createdAt, 'updatedAt', posts.updatedAt) END as "post" FROM users LEFT JOIN posts ON users.id = posts.userId WHERE users.id = ? [ 'ntSzgR5pE6NFwL-iBnZM6' ]
+{ message: 'end of request', duration: 4 }
+Left Join Result: {
+  user: {
+    id: 'ntSzgR5pE6NFwL-iBnZM6',
+    createdAt: '2026-01-12T06:01:25.400Z',
+    updatedAt: '2026-01-12T06:01:25.400Z',
+    name: 'Left Join User 1768197685394',
+    email: 'leftjoin1768197685394@example.com',
+    age: null,
+    data: null
+  },
+  post: null
+}
+✅ tests passed
+[wrangler:info] POST /v1/users/query 200 OK (7ms)
+Sending SIGTERM to process 5189...
+Process 5189 shut down gracefully.
