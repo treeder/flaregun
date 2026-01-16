@@ -159,6 +159,7 @@ export class D1 {
     if (typeof table != 'string') {
       q.model = table
     }
+    delete q.offset
     let col = 'count(*)'
     q.columns = [col]
     let r = await this.retry(async () => {
