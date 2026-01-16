@@ -91,12 +91,7 @@ export async function testLeftJoinNull(tk) {
   let resultUser = queryRes.users[0]
   console.log('Left Join Result:', resultUser)
 
-  // This is what we want to fail currently (or rather, we want to see it fail my expectation if I asserted null)
-  // The user reported: "It currently returns an object with all null fields."
-
-  // So currently: resultUser.post is likely { id: null, title: null, ... }
-  // We want: resultUser.post to be null.
-
-  // So I will assert that it IS null. This assertion should FAIL.
+  // Assert that the joined 'post' object is null when no match is found.
+  // This is the correct behavior this PR implements.
   assert(resultUser.post === null, "Expected joined 'post' object to be null when no match found")
 }
