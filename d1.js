@@ -555,13 +555,7 @@ export class D1 {
     // we need to check if the record exists, if not, return null
     // we do this by checking if the primary key is null
     // Use the primary key defined in the model, or default to 'id'
-    let pk = 'id'
-    for (const key in model.properties) {
-      if (model.properties[key].primaryKey) {
-        pk = key
-        break
-      }
-    }
+    const pk = Object.keys(model.properties).find(key => model.properties[key].primaryKey) || 'id';
     return `CASE WHEN ${tableName}.${pk} IS NULL THEN NULL ELSE json_object(${args}) END as "${alias}"`
   }
 }
