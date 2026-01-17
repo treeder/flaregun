@@ -303,12 +303,14 @@ export class D1 {
       for (const q2 in whereClause) {
         // console.log("Q2:", q2)
         if (w.length > 0) w.push(' AND')
-        let k = q2
-        if (prefix && !k.includes('.')) {
-          k = prefix + '.' + k
+        let k = this.processCol(q2, knownTables, prefix)
+        let v = whereClause[q2]
+        if (v === null) {
+          w.push(`${k} IS NULL`)
+        } else {
+          w.push(`${k} = ?`)
+          binds.push(v)
         }
-        w.push(`${k} = ?`)
-        binds.push(whereClause[q2])
         i++
       }
     } else {

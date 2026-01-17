@@ -6,6 +6,7 @@ import { testJoin } from './test_join.js'
 import { testJoinWhere } from './test_join_where.js'
 import { testNulls } from './test_nulls.js'
 import { testLeftJoinNull } from './test_left_join_null.js'
+import { testObjectQuery } from './test_object_query.js'
 
 // Create the context for your tests, include anything the need to run
 let apiURL = 'http://localhost:8787'
@@ -18,5 +19,5 @@ let c = {
   env: process.env,
 }
 
-let testKit = new TestKit(c, [test1, testJoin, testJoinWhere, testNulls, testLeftJoinNull])
+let testKit = new TestKit(c, [test1, testJoin, testJoinWhere, testNulls, testLeftJoinNull, testObjectQuery])
 await testKit.run()
