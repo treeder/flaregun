@@ -554,7 +554,11 @@ export class D1 {
     let alias = toCamelCase(model.name)
     let fields = Object.keys(model.properties)
     let args = fields.map((f) => `'${f}', ${tableName}.${f}`).join(', ')
-    return `json_object(${args}) as "${alias}"`
+    // we need to check if the record exists, if not, return null
+    // we do this by checking if the primary key is null
+    // Use the primary key defined in the model, or default to 'id'
+    const pk = Object.keys(model.properties).find(key => model.properties[key].primaryKey) || 'id';
+    return `CASE WHEN ${tableName}.${pk} IS NULL THEN NULL ELSE json_object(${args}) END as "${alias}"`
   }
 }
 
