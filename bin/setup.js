@@ -4,9 +4,17 @@ import { fetchCF } from './cfapi.js'
 import { writeFileSync } from 'fs'
 
 export async function setup(args) {
+  let envFilter
+  if (args) {
+    let idx = args.indexOf('--env')
+    if (idx !== -1 && idx + 1 < args.length) {
+      envFilter = args[idx + 1]
+    }
+  }
   console.log('ENV:', process.env)
   let c = {
     env: process.env,
+    envFilter,
   }
 
   if (!c.env.CLOUDFLARE_ACCOUNT_ID || !c.env.CLOUDFLARE_API_TOKEN) {
@@ -20,6 +28,9 @@ async function parseWrangler(c) {
   // console.log(wranglerConfig)
 
   for (let env in wranglerConfig.env) {
+    if (c.envFilter && env !== c.envFilter) {
+      continue
+    }
     console.log(`Creating resources for environment: ${env}`)
     let prod = wranglerConfig.env[env]
     // let prod = wranglerConfig.env.prod

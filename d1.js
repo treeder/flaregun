@@ -304,12 +304,14 @@ export class D1 {
       for (const q2 in whereClause) {
         // console.log("Q2:", q2)
         if (w.length > 0) w.push(' AND')
-        let k = q2
-        if (prefix && !k.includes('.')) {
-          k = prefix + '.' + k
+        let k = this.processCol(q2, knownTables, prefix)
+        let v = whereClause[q2]
+        if (v === null) {
+          w.push(`${k} IS NULL`)
+        } else {
+          w.push(`${k} = ?`)
+          binds.push(v)
         }
-        w.push(`${k} = ?`)
-        binds.push(whereClause[q2])
         i++
       }
     } else {
@@ -553,7 +555,11 @@ export class D1 {
     let alias = toCamelCase(model.name)
     let fields = Object.keys(model.properties)
     let args = fields.map((f) => `'${f}', ${tableName}.${f}`).join(', ')
-    return `json_object(${args}) as "${alias}"`
+    // we need to check if the record exists, if not, return null
+    // we do this by checking if the primary key is null
+    // Use the primary key defined in the model, or default to 'id'
+    const pk = Object.keys(model.properties).find(key => model.properties[key].primaryKey) || 'id';
+    return `CASE WHEN ${tableName}.${pk} IS NULL THEN NULL ELSE json_object(${args}) END as "${alias}"`
   }
 }
 
