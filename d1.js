@@ -298,7 +298,7 @@ export class D1 {
         }
       }
     } else if (typeof whereClause === 'object') {
-      // if where is an object, then just exact match
+      // if where is an object, then exact match
       let i = 0
       for (const q2 in whereClause) {
         // console.log("Q2:", q2)
