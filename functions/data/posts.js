@@ -5,6 +5,12 @@ export class Post {
       type: String,
       primaryKey: true,
     },
+    createdAt: {
+      type: Date,
+    },
+    updatedAt: {
+      type: Date,
+    },
     userId: {
       type: String,
     },
@@ -14,11 +20,8 @@ export class Post {
     content: {
       type: String,
     },
-    createdAt: {
-      type: Date,
+    data: {
+      type: Object,
     },
-    updatedAt: {
-      type: Date,
-    }
   }
 }
