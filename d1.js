@@ -323,15 +323,27 @@ export class D1 {
     let q0 = col
 
     // Auto prefix
-    if (prefix && !q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
-      q0 = prefix + '.' + q0
+    if (prefix && !(q0.includes('$') || q0.includes('('))) {
+      if (!q0.includes('.')) {
+        q0 = prefix + '.' + q0
+      } else {
+        let split = q0.split('.')
+        // if it has a dot, we only prefix if the first part is NOT a known table
+        // this allows us to use implicit prefixes for join wheres even with dot notation
+        if (!knownTables.includes(split[0])) {
+          q0 = prefix + '.' + q0
+        }
+      }
     }
 
     if (q0.includes('.') && !(q0.includes('$') || q0.includes('('))) {
       let split = q0.split('.')
       // Check if it's a known table
       if (knownTables.includes(split[0])) {
-        // It's a table column, keep as is
+        // It's a table column, keep as is unless it has dot notation for json
+        if (split.length > 2) {
+          q0 = `json_extract(${split[0]}.${split[1]}, '$.${split.slice(2).join('.')}')`
+        }
       } else {
         // then it's a path into a json object. We reject $ and ( so it's not already an explicity json function
         q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
@@ -558,7 +570,7 @@ export class D1 {
     // we need to check if the record exists, if not, return null
     // we do this by checking if the primary key is null
     // Use the primary key defined in the model, or default to 'id'
-    const pk = Object.keys(model.properties).find(key => model.properties[key].primaryKey) || 'id';
+    const pk = Object.keys(model.properties).find((key) => model.properties[key].primaryKey) || 'id'
     return `CASE WHEN ${tableName}.${pk} IS NULL THEN NULL ELSE json_object(${args}) END as "${alias}"`
   }
 }
