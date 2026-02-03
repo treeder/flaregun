@@ -416,7 +416,7 @@ export class D1 {
         ob.id = id
       }
     }
-    let now = new Date().toISOString()
+    let now = new Date()
     if (!fields.includes('createdAt')) {
       fields.push('createdAt')
       values.push(now)
@@ -480,7 +480,7 @@ export class D1 {
       opts = {}
     }
     opts.isUpdate = true
-    let now = new Date().toISOString()
+    let now = new Date()
     fields.push('updatedAt')
     values.push(now)
     ob.updatedAt = now
