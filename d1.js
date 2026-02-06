@@ -524,7 +524,7 @@ export class D1 {
   }
 
   async batch(sts) {
-    return this.db.batch(sts)
+    return await this.db.batch(sts)
   }
 
   toValues(values) {
