@@ -524,7 +524,10 @@ export class D1 {
   }
 
   async batch(sts) {
-    return await this.db.batch(sts)
+    let r = await this.retry(async () => {
+      return await this.db.batch(sts)
+    })
+    return {response: r}
   }
 
   toValues(values) {
