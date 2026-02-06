@@ -516,7 +516,7 @@ export class D1 {
    * @returns
    */
   async update(table, id, obj, opts = {}) {
-    let {id: _id, st: st, object: ob} = await this.updatep(table, id, obj, opts)
+    let {id: _id, stmt: st, object: ob} = await this.updatep(table, id, obj, opts)
     let r = await this.retry(async () => {
       return await st.run()
     })
