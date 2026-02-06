@@ -501,7 +501,7 @@ export class D1 {
     let vs = this.toValues(values)
     vs.push(id)
     if (this.debug) console.log('SQL:', s, vs)
-    return {id: id, st: this.db.prepare(s).bind(...vs), object: ob}
+    return {id: id, stmt: this.db.prepare(s).bind(...vs), object: ob}
   }
 
   /**
