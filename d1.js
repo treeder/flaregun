@@ -371,15 +371,7 @@ export class D1 {
     return { w, binds }
   }
 
-  /**
-   * Prepare insert a new record.
-   *
-   * @param {*} table
-   * @param {*} obj the object to store.
-   * @param {*} opts
-   * @returns
-   */
-  async insertp(table, obj, opts = {}) {
+  async _insertp(table, obj, opts = {}) {
     if (typeof table != 'string') {
       opts.model = table
     }
@@ -438,6 +430,19 @@ export class D1 {
   }
 
   /**
+   * Prepare insert a new record.
+   *
+   * @param {*} table
+   * @param {*} obj the object to store.
+   * @param {*} opts
+   * @returns
+   */
+  async insertp(table, obj, opts = {}) {
+    let r = await this._insertp(table, obj, opts)
+    return r.stmt
+  }
+
+  /**
    * Insert a new record.
    *
    * @param {*} table
@@ -446,26 +451,14 @@ export class D1 {
    * @returns
    */
   async insert(table, obj, opts = {}) {
-    let {id, stmt: st, object: ob} = await this.insertp(table, obj, opts)
+    let {id, stmt: st, object: ob} = await this._insertp(table, obj, opts)
     let r = await this.retry(async () => {
       return await st.run()
     })
     return { id: id, response: r, object: ob }
   }
 
-
-  /**
-   * Prepare update an existing record.
-   *
-   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
-   *
-   * @param {*} table
-   * @param {*} id
-   * @param {*} obj
-   * @param {*} opts
-   * @returns
-   */
-  async updatep(table, id, obj, opts = {}) {
+  async _updatep(table, id, obj, opts = {}) {
     if (typeof table != 'string') {
       opts.model = table
     }
@@ -505,6 +498,22 @@ export class D1 {
   }
 
   /**
+   * Prepare update an existing record.
+   *
+   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
+   *
+   * @param {*} table
+   * @param {*} id
+   * @param {*} obj
+   * @param {*} opts
+   * @returns
+   */
+  async updatep(table, id, obj, opts = {}) {
+    let r = await this._updatep(table, id, obj, opts)
+    return r.stmt
+  }
+
+  /**
    * Update an existing record.
    *
    * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
@@ -516,7 +525,7 @@ export class D1 {
    * @returns
    */
   async update(table, id, obj, opts = {}) {
-    let {id: _id, stmt: st, object: ob} = await this.updatep(table, id, obj, opts)
+    let {id: _id, stmt: st, object: ob} = await this._updatep(table, id, obj, opts)
     let r = await this.retry(async () => {
       return await st.run()
     })
