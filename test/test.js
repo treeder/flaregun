@@ -8,8 +8,9 @@ import { testNulls } from './test_nulls.js'
 import { testLeftJoinNull } from './test_left_join_null.js'
 import { testObjectQuery } from './test_object_query.js'
 import { testJoinJson } from './test_join_json.js'
+import { testPatch } from './test_patch.js'
 
-// Create the context for your tests, include anything the need to run
+// Create the context for your tests, include anything they need to run
 let apiURL = 'http://localhost:8787'
 let api = new API({
   apiURL,
@@ -28,5 +29,6 @@ let testKit = new TestKit(c, [
   testLeftJoinNull,
   testObjectQuery,
   testJoinJson,
+  testPatch,
 ])
 await testKit.run()

@@ -9,6 +9,8 @@ export async function onRequestPost(c) {
   let userId = c.params.id
   let input = await c.request.json()
   let user = input.user
+  user.data ||= {}
+  console.log('update user', user)
   await c.data.d1.update(User, userId, user)
   return Response.json({ user })
 }
