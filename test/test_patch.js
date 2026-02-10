@@ -22,7 +22,6 @@ export async function testPatch(c) {
   assert(r.user)
   assert(r.user.id)
   let userId = r.user.id
-  let originalData = r.user.data
 
   // Patch user with partial data
   // We want to update data.foo and add data.baz, but keep data.nested
@@ -37,9 +36,8 @@ export async function testPatch(c) {
     },
   }
 
-  // The current implementation uses POST to /v1/users/:id for updates
   r = await c.api.fetch(`/v1/users/${userId}`, {
-    method: 'POST', // Using POST as that's what the handler expects for update
+    method: 'PATCH',
     body: { user: patch },
   })
 
@@ -48,27 +46,18 @@ export async function testPatch(c) {
   r = await c.api.fetch(`/v1/users/${userId}`)
   let updatedUser = r.user
 
-  // Verify merge patch behavior (RFC 7396)
   assert(updatedUser.data.foo === 'updated', 'foo should be updated')
   assert(updatedUser.data.baz === 'qux', 'baz should be added')
   assert(updatedUser.data.nested.a === 3, 'nested.a should be updated')
-  // In RFC 7396, keys not in patch should be preserved?
-  // Wait, RFC 7396 is recursive merge.
-  // SQLite json_patch is RFC 7396.
-  // If I patch { "nested": { "a": 3 } }, does it specific replace "nested" with { "a": 3 } or merge into it?
-  // standard RFC 7396 says: if target is object and patch is object, merge members.
-  // So nested.b should be preserved.
   assert(updatedUser.data.nested.b === 2, 'nested.b should be preserved')
 
-  // verify null deletion
-  // RFC 7396: null value in patch deletes the key
   patch = {
     data: {
       baz: null,
     },
   }
   r = await c.api.fetch(`/v1/users/${userId}`, {
-    method: 'POST',
+    method: 'PATCH',
     body: { user: patch },
   })
   r = await c.api.fetch(`/v1/users/${userId}`)
@@ -90,17 +79,15 @@ export async function testPatch(c) {
   assert(r.user)
   assert(r.user.id)
   let userId2 = r.user.id
-  let originalData2 = r.user.data
   patch = {
     name: 'Patch User Patched ' + nanoid(),
   }
   r = await c.api.fetch(`/v1/users/${userId2}`, {
-    method: 'POST',
+    method: 'PATCH',
     body: { user: patch },
   })
   r = await c.api.fetch(`/v1/users/${userId2}`)
   updatedUser = r.user
-  console.log('updatedUser:', updatedUser)
   assert(updatedUser.name === patch.name, 'name should be updated')
   assert(updatedUser.data.foo === 'bar', 'foo should be preserved')
 }
