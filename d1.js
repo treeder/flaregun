@@ -26,14 +26,15 @@ export class D1 {
     return this.db.prepare(s)
   }
 
-  async retry(fn) {
+  async retry(fn, opts = {}) {
     let attempt = 1
+    let debug = this.debug || opts.debug
     while (true) {
       try {
         return await fn()
       } catch (err) {
         if (this.shouldRetry(err, attempt)) {
-          if (this.debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
+          if (debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
           // Exponential backoff
           await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10))
           attempt++
@@ -82,7 +83,7 @@ export class D1 {
         .prepare(`SELECT * FROM ${this.tableName(table)} where id = ?`)
         .bind(id)
         .first()
-    })
+    }, { debug: q.debug })
     parseModel(r, q.model, { parseJSON: true })
     return r
   }
@@ -93,13 +94,13 @@ export class D1 {
    * @param {*} id
    * @returns
    */
-  async delete(table, id) {
+  async delete(table, id, opts = {}) {
     return await this.retry(async () => {
       return await this.db
         .prepare(`DELETE FROM ${this.tableName(table)} where id = ?`)
         .bind(id)
         .run()
-    })
+    }, { debug: opts.debug })
   }
 
   /**
@@ -116,7 +117,7 @@ export class D1 {
     let r = await this.retry(async () => {
       let st = this.prepStmt(table, q)
       return await st.all()
-    })
+    }, { debug: q.debug })
     // console.log("QUERY:", r)
     if (q.model || q.join) {
       // then we need to do some parsing
@@ -165,7 +166,7 @@ export class D1 {
     let r = await this.retry(async () => {
       let st = this.prepStmt(table, q)
       return await st.first()
-    })
+    }, { debug: q.debug })
     console.log('COUNT:', r)
     return r[col]
   }
@@ -178,7 +179,7 @@ export class D1 {
     let r = await this.retry(async () => {
       let st = this.prepStmt(table, q)
       return await st.first()
-    })
+    }, { debug: q.debug })
     // console.log("FIRST:", r)
     parseModel(r, q.model, { parseJSON: true })
     return r
@@ -186,6 +187,7 @@ export class D1 {
 
   prepStmt(table, q = {}) {
     // console.log("stmt", q)
+    let debug = this.debug || q.debug
     let mainTableName = this.tableName(table)
     let knownTables = [mainTableName]
     let joins = []
@@ -271,7 +273,7 @@ export class D1 {
     }
     if (q.limit) s += ' LIMIT ' + q.limit
     if (q.offset) s += ' OFFSET ' + q.offset
-    if (this.debug) console.log('SQL:', s, binds)
+    if (debug) console.log('SQL:', s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
   }
@@ -433,11 +435,12 @@ export class D1 {
       }
     }
     let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
-    if (this.debug) console.log('SQL:', s, values)
+    let debug = this.debug || opts.debug
+    if (debug) console.log('SQL:', s, values)
     let r = await this.retry(async () => {
       let st = this.db.prepare(s).bind(...this.toValues(values))
       return await st.run()
-    })
+    }, { debug })
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
@@ -489,11 +492,12 @@ export class D1 {
     let s = `UPDATE ${this.tableName(table)} SET ${fieldsAndValues.fieldString} WHERE id = ?`
     let vs = this.toValues(values)
     vs.push(id)
-    if (this.debug) console.log('SQL:', s, vs)
+    let debug = this.debug || opts.debug
+    if (debug) console.log('SQL:', s, vs)
     let r = await this.retry(async () => {
       let st = this.db.prepare(s).bind(...vs)
       return await st.run()
-    })
+    }, { debug })
     // let o = {}
     // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
