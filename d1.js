@@ -426,7 +426,7 @@ export class D1 {
     }
     let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
     if (this.debug) console.log('SQL:', s, values)
-    return {id: id, stmt: this.db.prepare(s).bind(...this.toValues(values)), object: ob}
+    return { id: id, stmt: this.db.prepare(s).bind(...this.toValues(values)), object: ob }
   }
 
   /**
@@ -451,7 +451,7 @@ export class D1 {
    * @returns
    */
   async insert(table, obj, opts = {}) {
-    let {id, stmt: st, object: ob} = await this._insertp(table, obj, opts)
+    let { id, stmt: st, object: ob } = await this._insertp(table, obj, opts)
     let r = await this.retry(async () => {
       return await st.run()
     })
@@ -494,7 +494,7 @@ export class D1 {
     let vs = this.toValues(values)
     vs.push(id)
     if (this.debug) console.log('SQL:', s, vs)
-    return {id: id, stmt: this.db.prepare(s).bind(...vs), object: ob}
+    return { id: id, stmt: this.db.prepare(s).bind(...vs), object: ob }
   }
 
   /**
@@ -525,18 +525,18 @@ export class D1 {
    * @returns
    */
   async update(table, id, obj, opts = {}) {
-    let {id: _id, stmt: st, object: ob} = await this._updatep(table, id, obj, opts)
+    let { id: _id, stmt: st, object: ob } = await this._updatep(table, id, obj, opts)
     let r = await this.retry(async () => {
       return await st.run()
     })
-    return {id: id, response: r, object: ob}
+    return { id: id, response: r, object: ob }
   }
 
   async batch(sts) {
     let r = await this.retry(async () => {
       return await this.db.batch(sts)
     })
-    return {response: r}
+    return { response: r }
   }
 
   toValues(values) {
