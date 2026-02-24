@@ -371,15 +371,7 @@ export class D1 {
     return { w, binds }
   }
 
-  /**
-   * Insert a new record.
-   *
-   * @param {*} table
-   * @param {*} obj the object to store.
-   * @param {*} opts
-   * @returns
-   */
-  async insert(table, obj, opts = {}) {
+  async _insertp(table, obj, opts = {}) {
     if (typeof table != 'string') {
       opts.model = table
     }
@@ -434,27 +426,39 @@ export class D1 {
     }
     let s = `INSERT INTO ${this.tableName(table)} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
     if (this.debug) console.log('SQL:', s, values)
-    let r = await this.retry(async () => {
-      let st = this.db.prepare(s).bind(...this.toValues(values))
-      return await st.run()
-    })
-    // let o = {}
-    // fields.forEach((f, i) => o[f] = values[i])
-    return { id: id, response: r, object: ob }
+    return { id: id, stmt: this.db.prepare(s).bind(...this.toValues(values)), object: ob }
   }
 
   /**
-   * Update an existing record.
-   *
-   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
+   * Prepare insert a new record.
    *
    * @param {*} table
-   * @param {*} id
-   * @param {*} obj
+   * @param {*} obj the object to store.
    * @param {*} opts
    * @returns
    */
-  async update(table, id, obj, opts = {}) {
+  async insertp(table, obj, opts = {}) {
+    let r = await this._insertp(table, obj, opts)
+    return r.stmt
+  }
+
+  /**
+   * Insert a new record.
+   *
+   * @param {*} table
+   * @param {*} obj the object to store.
+   * @param {*} opts
+   * @returns
+   */
+  async insert(table, obj, opts = {}) {
+    let { id, stmt: st, object: ob } = await this._insertp(table, obj, opts)
+    let r = await this.retry(async () => {
+      return await st.run()
+    })
+    return { id: id, response: r, object: ob }
+  }
+
+  async _updatep(table, id, obj, opts = {}) {
     if (typeof table != 'string') {
       opts.model = table
     }
@@ -490,13 +494,49 @@ export class D1 {
     let vs = this.toValues(values)
     vs.push(id)
     if (this.debug) console.log('SQL:', s, vs)
+    return { id: id, stmt: this.db.prepare(s).bind(...vs), object: ob }
+  }
+
+  /**
+   * Prepare update an existing record.
+   *
+   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
+   *
+   * @param {*} table
+   * @param {*} id
+   * @param {*} obj
+   * @param {*} opts
+   * @returns
+   */
+  async updatep(table, id, obj, opts = {}) {
+    let r = await this._updatep(table, id, obj, opts)
+    return r.stmt
+  }
+
+  /**
+   * Update an existing record.
+   *
+   * This will merge all data according to [rfc7396](https://datatracker.ietf.org/doc/html/rfc7396)
+   *
+   * @param {*} table
+   * @param {*} id
+   * @param {*} obj
+   * @param {*} opts
+   * @returns
+   */
+  async update(table, id, obj, opts = {}) {
+    let { id: _id, stmt: st, object: ob } = await this._updatep(table, id, obj, opts)
     let r = await this.retry(async () => {
-      let st = this.db.prepare(s).bind(...vs)
       return await st.run()
     })
-    // let o = {}
-    // fields.forEach((f, i) => o[f] = values[i])
     return { id: id, response: r, object: ob }
+  }
+
+  async batch(sts) {
+    let r = await this.retry(async () => {
+      return await this.db.batch(sts)
+    })
+    return { response: r }
   }
 
   toValues(values) {
