@@ -1,39 +1,24 @@
 import { assert } from 'testkit'
 
 export async function testOr(c) {
-  // Create two users
-  let u1 = {
-    name: 'Or User 1',
-    email: 'or1@example.com',
-  }
-  let r1 = await c.api.fetch(`/v1/users`, {
-    method: 'POST',
-    body: { user: u1 },
-  })
-  assert(r1.user)
-  let id1 = r1.user.id
+  // Create three users
+  const usersToCreate = [
+    { name: 'Or User 1', email: 'or1@example.com' },
+    { name: 'Or User 2', email: 'or2@example.com' },
+    { name: 'Or User 3', email: 'or3@example.com' },
+  ]
 
-  let u2 = {
-    name: 'Or User 2',
-    email: 'or2@example.com',
-  }
-  let r2 = await c.api.fetch(`/v1/users`, {
-    method: 'POST',
-    body: { user: u2 },
-  })
-  assert(r2.user)
-  let id2 = r2.user.id
-
-  let u3 = {
-    name: 'Or User 3',
-    email: 'or3@example.com',
-  }
-  let r3 = await c.api.fetch(`/v1/users`, {
-    method: 'POST',
-    body: { user: u3 },
-  })
-  assert(r3.user)
-  let id3 = r3.user.id
+  const userIds = await Promise.all(
+    usersToCreate.map(async (user) => {
+      const r = await c.api.fetch(`/v1/users`, {
+        method: 'POST',
+        body: { user },
+      })
+      assert(r.user)
+      return r.user.id
+    }),
+  )
+  const [id1, id2, id3] = userIds
 
   // Query with OR
   // We want to find user 1 or user 2
