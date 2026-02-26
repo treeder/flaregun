@@ -61,7 +61,11 @@ export class ErrorHandler {
         options.body = options.body(message)
       }
 
-      let filenameAndLineNumbers = err.stack.split('\n').find((l) => l.match(/.*:\d+:\d+/))
+      let filenameAndLineNumbers = err.stack ? err.stack.split('\n').find((l) => l.match(/.*:\d+:\d+/)) : null
+      if (!filenameAndLineNumbers) {
+        filenameAndLineNumbers = err.message.replace(/\s/g, '_')
+      }
+      filenameAndLineNumbers = filenameAndLineNumbers.trim()
       // console.log('ErrorHandler: filenameAndLineNumbers:', filenameAndLineNumbers)
       if (!this.options.force && c.env.KV) {
         // console.log('checking KV for duplicates')
