@@ -38,7 +38,10 @@ export class ErrorHandler {
    * @returns
    */
   async logc(c, err) {
-    this.logger.log(err.message, err)
+    // Only log server errors (status >= 500) or crashes (no status).
+    if (err.status == null || err.status >= 500) {
+      this.logger.log(err.message, err)
+    }
     c.waitUntil(this.doPost(c, err))
   }
 
