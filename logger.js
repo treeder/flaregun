@@ -72,6 +72,9 @@ export class CloudflareLogger {
     if (err) {
       data.message = err.message
       data.level = 'error'
+      if (err.status && err.status < 500) {
+        data.level = 'info'
+      }
       data.error = {
         message: err.message,
         stack: err.stack,
