@@ -8,6 +8,7 @@ import { testNulls } from './test_nulls.js'
 import { testLeftJoinNull } from './test_left_join_null.js'
 import { testObjectQuery } from './test_object_query.js'
 import { testJoinJson } from './test_join_json.js'
+import { testOr } from './test_or.js'
 import { testBatch } from './test_batch.js'
 import { testPatch } from './test_patch.js'
 
@@ -30,6 +31,7 @@ let testKit = new TestKit(c, [
   testLeftJoinNull,
   testObjectQuery,
   testJoinJson,
+  testOr,
   testBatch,
   testPatch,
 ])
