@@ -84,9 +84,7 @@ export class ErrorHandler {
         })
       }
       try {
-        // console.log('about to post', postTo.url)
         let r = await api(postTo.url, options)
-        console.log('ErrorHandler: response from postTo:', r)
       } catch (e) {
         console.log('ErrorHandler: error posting to postTo:', e)
       }
