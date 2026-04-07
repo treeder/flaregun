@@ -30,7 +30,7 @@
   },
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
-    "api": "github:treeder/api",
+    "api": "github:treeder/api#semver:^1",
     "dotenv": "^17.2.3",
     "jsonc-parse": "^1.5.5",
     "models": "github:treeder/models#semver:^1",
