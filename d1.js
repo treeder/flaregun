@@ -362,8 +362,10 @@ export class D1 {
     } else if (q2[1].toLowerCase() == 'is not null') {
       w.push(` ${q0} IS NOT NULL`)
     } else if (q2[1].toLowerCase() == 'in') {
-      w.push(` ${q0} IN (${q2[2].map((_, i) => '?').join(',')})`)
-      binds.push(...this.toValues(q2[2]))
+      const rawIn = this.toValues(q2[2])
+        .map((v) => `'${v.replace("'", '')}'`) // prevents injections
+        .join(',')
+      w.push(` ${q0} IN (${rawIn})`)
     } else {
       w.push(` ${q0} ${q2[1]} ?`)
       binds.push(this.toValue(q2[2]))
