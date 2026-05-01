@@ -458,6 +458,119 @@ export class D1 {
     return { id: id, response: r, object: ob }
   }
 
+
+  async _upsertp(table, obj, opts = {}) {
+    if (typeof table != 'string') {
+      opts.model = table
+    }
+    let ob = null
+    let fields = []
+    let values = []
+    if (obj instanceof Object && !Array.isArray(obj)) {
+      ob = obj
+      values = []
+      let f2 = []
+      for (const f in obj) {
+        f2.push(f)
+        values.push(obj[f])
+      }
+      fields = f2
+    } else {
+      // deprecated
+      fields = obj
+      values = opts
+      ob = {}
+      opts = {}
+    }
+    let id
+    if (!fields.includes('id')) {
+      id = nanoid()
+      fields.push('id')
+      values.push(id)
+      ob.id = id
+    } else {
+      id = values[fields.indexOf('id')]
+      if (!id) {
+        id = nanoid()
+        values[fields.indexOf('id')] = id
+        ob.id = id
+      }
+    }
+    let now = new Date()
+    if (!fields.includes('createdAt')) {
+      fields.push('createdAt')
+      values.push(now)
+      ob.createdAt = now
+    }
+    if (!fields.includes('updatedAt')) {
+      fields.push('updatedAt')
+      values.push(now)
+      ob.updatedAt = now
+    } else {
+      // If updating, we should probably set updatedAt to now anyway, or keep what they provided?
+      // Let's keep what they provided for consistency with insert, but typically upsert would update the date.
+      // Actually we'll let ON CONFLICT handle updating it to `excluded.updatedAt`.
+    }
+    for (let f of fields) {
+      if (!/^[a-zA-Z0-9]+$/.test(f)) {
+        throw new Error('Field must be alphanumeric')
+      }
+    }
+
+    let tableName = this.tableName(table)
+    let s = `INSERT INTO ${tableName} (${fields.join(', ')}) VALUES (${fields.map((f) => '?').join(',')})`
+
+    let updates = []
+    for (let i = 0; i < fields.length; i++) {
+      let f = fields[i]
+      if (f === 'id' || f === 'createdAt') continue; // Don't update id or createdAt on conflict
+      let v = values[i]
+      if (this.isObject(v)) {
+        updates.push(`${f} = json_patch(COALESCE(${tableName}.${f}, '{}'), excluded.${f})`)
+      } else {
+        updates.push(`${f} = excluded.${f}`)
+      }
+    }
+
+    if (updates.length > 0) {
+      s += ` ON CONFLICT(id) DO UPDATE SET ${updates.join(', ')}`
+    } else {
+      s += ` ON CONFLICT(id) DO NOTHING`
+    }
+
+    if (this.debug) console.log('SQL:', s, values)
+    return { id: id, stmt: this.db.prepare(s).bind(...this.toValues(values)), object: ob }
+  }
+
+  /**
+   * Prepare upsert a record.
+   *
+   * @param {*} table
+   * @param {*} obj the object to store.
+   * @param {*} opts
+   * @returns
+   */
+  async upsertp(table, obj, opts = {}) {
+    let r = await this._upsertp(table, obj, opts)
+    return r.stmt
+  }
+
+  /**
+   * Upsert a record.
+   *
+   * @param {*} table
+   * @param {*} obj the object to store.
+   * @param {*} opts
+   * @returns
+   */
+  async upsert(table, obj, opts = {}) {
+    let { id, stmt: st, object: ob } = await this._upsertp(table, obj, opts)
+    let r = await this.retry(async () => {
+      return await st.run()
+    })
+    return { id: id, response: r, object: ob }
+  }
+
   async _updatep(table, id, obj, opts = {}) {
     if (typeof table != 'string') {
       opts.model = table

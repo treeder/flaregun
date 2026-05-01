@@ -11,6 +11,7 @@ import { testJoinJson } from './test_join_json.js'
 import { testOr } from './test_or.js'
 import { testBatch } from './test_batch.js'
 import { testPatch } from './test_patch.js'
+import { testUpsert } from './test_upsert.js'
 
 // Create the context for your tests, include anything they need to run
 let apiURL = 'http://localhost:8787'
@@ -34,5 +35,6 @@ let testKit = new TestKit(c, [
   testOr,
   testBatch,
   testPatch,
+  testUpsert,
 ])
 await testKit.run()
