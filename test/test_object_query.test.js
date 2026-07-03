@@ -1,6 +1,7 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 
-export async function testObjectQuery(c) {
+test('testObjectQuery', async () => {
   // Create a user with nested data
   let user1 = {
     name: 'Object Query User 1',
@@ -14,7 +15,7 @@ export async function testObjectQuery(c) {
     method: 'POST',
     body: { user: user1 },
   })
-  assert(r1.user)
+  expect(r1.user).toBeDefined()
 
   let user2 = {
     name: 'Object Query User 2',
@@ -28,25 +29,22 @@ export async function testObjectQuery(c) {
     method: 'POST',
     body: { user: user2 },
   })
-  assert(r2.user)
+  expect(r2.user).toBeDefined()
 
   // Test object query with dot notation and null
-  // This is the failing case we want to support
   let q1 = {
     where: { 'data.migratedToUserId': null }
   }
 
-  // Currently this will likely fail or return empty because it doesn't handle dot notation or null correctly in object syntax
   try {
     let res1 = await c.api.fetch(`/v1/users/query`, {
       method: 'POST',
       body: q1
     })
 
-    // If it works, it should return user1 but not user2
-    assert(res1.users)
-    assert(res1.users.find(u => u.id === r1.user.id), 'Should find user with null migratedToUserId')
-    assert(!res1.users.find(u => u.id === r2.user.id), 'Should not find user with value in migratedToUserId')
+    expect(res1.users).toBeDefined()
+    expect(res1.users.find(u => u.id === r1.user.id)).toBeDefined()
+    expect(res1.users.find(u => u.id === r2.user.id)).toBeUndefined()
     console.log("Test passed (unexpectedly?)")
   } catch (e) {
     console.log("Test failed as expected or with error:", e)
@@ -61,7 +59,7 @@ export async function testObjectQuery(c) {
     method: 'POST',
     body: q2
   })
-  assert(res2.users)
-  assert(res2.users.find(u => u.id === r1.user.id), 'Should find user with someValue=abc')
-  assert(!res2.users.find(u => u.id === r2.user.id), 'Should not find user with someValue=def')
-}
+  expect(res2.users).toBeDefined()
+  expect(res2.users.find(u => u.id === r1.user.id)).toBeDefined()
+  expect(res2.users.find(u => u.id === r2.user.id)).toBeUndefined()
+})

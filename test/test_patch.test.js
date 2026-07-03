@@ -1,7 +1,8 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 import { nanoid } from 'nanoid'
 
-export async function testPatch(c) {
+test('testPatch', async () => {
   let user = {
     name: 'Patch User ' + nanoid(),
     email: 'patch@user.com' + nanoid(),
@@ -19,13 +20,11 @@ export async function testPatch(c) {
     method: 'POST',
     body: { user },
   })
-  assert(r.user)
-  assert(r.user.id)
+  expect(r.user).toBeDefined()
+  expect(r.user.id).toBeDefined()
   let userId = r.user.id
 
   // Patch user with partial data
-  // We want to update data.foo and add data.baz, but keep data.nested
-  // Also update data.nested.a
   let patch = {
     data: {
       foo: 'updated',
@@ -41,15 +40,15 @@ export async function testPatch(c) {
     body: { user: patch },
   })
 
-  assert(r.user)
+  expect(r.user).toBeDefined()
   // Fetch fresh to be sure
   r = await c.api.fetch(`/v1/users/${userId}`)
   let updatedUser = r.user
 
-  assert(updatedUser.data.foo === 'updated', 'foo should be updated')
-  assert(updatedUser.data.baz === 'qux', 'baz should be added')
-  assert(updatedUser.data.nested.a === 3, 'nested.a should be updated')
-  assert(updatedUser.data.nested.b === 2, 'nested.b should be preserved')
+  expect(updatedUser.data.foo).toBe('updated')
+  expect(updatedUser.data.baz).toBe('qux')
+  expect(updatedUser.data.nested.a).toBe(3)
+  expect(updatedUser.data.nested.b).toBe(2)
 
   patch = {
     data: {
@@ -62,9 +61,9 @@ export async function testPatch(c) {
   })
   r = await c.api.fetch(`/v1/users/${userId}`)
   updatedUser = r.user
-  assert(updatedUser.data.baz === undefined, 'baz should be deleted')
+  expect(updatedUser.data.baz).toBeUndefined()
 
-  // also test if not data existed
+  // also test if no data existed
   let user2 = {
     name: 'Patch User ' + nanoid(),
     email: 'patch@user.com' + nanoid(),
@@ -76,8 +75,8 @@ export async function testPatch(c) {
     method: 'POST',
     body: { user: user2 },
   })
-  assert(r.user)
-  assert(r.user.id)
+  expect(r.user).toBeDefined()
+  expect(r.user.id).toBeDefined()
   let userId2 = r.user.id
   patch = {
     name: 'Patch User Patched ' + nanoid(),
@@ -88,6 +87,6 @@ export async function testPatch(c) {
   })
   r = await c.api.fetch(`/v1/users/${userId2}`)
   updatedUser = r.user
-  assert(updatedUser.name === patch.name, 'name should be updated')
-  assert(updatedUser.data.foo === 'bar', 'foo should be preserved')
-}
+  expect(updatedUser.name).toBe(patch.name)
+  expect(updatedUser.data.foo).toBe('bar')
+})

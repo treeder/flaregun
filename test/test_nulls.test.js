@@ -1,6 +1,7 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 
-export async function testNulls(c) {
+test('testNulls', async () => {
   // Create a user with age = null (default)
   let user1 = {
     name: 'Null Age User',
@@ -11,7 +12,7 @@ export async function testNulls(c) {
     method: 'POST',
     body: { user: user1 },
   })
-  assert(r1.user)
+  expect(r1.user).toBeDefined()
 
   // Create a user with age = 25
   let user2 = {
@@ -23,7 +24,7 @@ export async function testNulls(c) {
     method: 'POST',
     body: { user: user2 },
   })
-  assert(r2.user)
+  expect(r2.user).toBeDefined()
 
   // Test IS NULL
   let q1 = {
@@ -33,9 +34,9 @@ export async function testNulls(c) {
     method: 'POST',
     body: q1
   })
-  assert(res1.users)
-  assert(res1.users.find(u => u.id === r1.user.id), 'Should find user with null age')
-  assert(!res1.users.find(u => u.id === r2.user.id), 'Should not find user with age 25')
+  expect(res1.users).toBeDefined()
+  expect(res1.users.find(u => u.id === r1.user.id)).toBeDefined()
+  expect(res1.users.find(u => u.id === r2.user.id)).toBeUndefined()
 
   // Test IS NOT NULL
   let q2 = {
@@ -45,7 +46,7 @@ export async function testNulls(c) {
     method: 'POST',
     body: q2
   })
-  assert(res2.users)
-  assert(!res2.users.find(u => u.id === r1.user.id), 'Should not find user with null age')
-  assert(res2.users.find(u => u.id === r2.user.id), 'Should find user with age 25')
-}
+  expect(res2.users).toBeDefined()
+  expect(res2.users.find(u => u.id === r1.user.id)).toBeUndefined()
+  expect(res2.users.find(u => u.id === r2.user.id)).toBeDefined()
+})

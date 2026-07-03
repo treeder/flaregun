@@ -1,6 +1,7 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 
-export async function testJoinWhere(c) {
+test('testJoinWhere', async () => {
   let user = {
     name: 'Join User 2',
     email: 'join2@example.com',
@@ -9,7 +10,7 @@ export async function testJoinWhere(c) {
     method: 'POST',
     body: { user },
   })
-  assert(r.user)
+  expect(r.user).toBeDefined()
   let userId = r.user.id
 
   let post1 = {
@@ -36,15 +37,11 @@ export async function testJoinWhere(c) {
   // We filter for 'Wanted Post'
   let r3 = await c.api.fetch(`/v1/posts?title=Wanted%20Post`)
   console.log('Filtered Join Result:', r3)
-  assert(r3.posts)
-
-  // The structure returned by d1.query with join is an array of objects.
-  // [{ user: {...}, post: {title: 'Wanted Post'} }]
+  expect(r3.posts).toBeDefined()
 
   let found = r3.posts.find((u) => u.user.id === userId && u.post.title === 'Wanted Post')
-  assert(found, 'Should find the user with the wanted post')
+  expect(found).toBeDefined()
 
-  // We should NOT find a row with 'Unwanted Post' for this user
   let notFound = r3.posts.find((u) => u.user.id === userId && u.post.title === 'Unwanted Post')
-  assert(!notFound, 'Should not find the user with the unwanted post')
-}
+  expect(notFound).toBeUndefined()
+})

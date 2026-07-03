@@ -8,8 +8,8 @@
     "start": "npm install && npx -y wrangler dev --env dev --live-reload",
     "build": "npx -y treeder/flaregun build",
     "run": "npx -y wrangler dev --env dev",
-    "test:run": "node test/test.js",
-    "test": "npx -y treeder/testkit --port=8787",
+    "test:run": "vitest run",
+    "test": "vitest run",
     "setup": "npx -y treeder/flaregun setup",
     "deploy": "npx -y wrangler deploy --env dev",
     "deploy:preview": "npx -y wrangler versions upload --env dev",
@@ -40,7 +40,7 @@
     "migrations": "github:treeder/migrations#semver:^1",
     "once": "github:treeder/once#semver:^1",
     "prettier": "^3.6.2",
-    "testkit": "github:treeder/testkit#semver:^2"
+    "vitest": "^4.1.9"
   },
   "prettier": {
     "tabWidth": 2,

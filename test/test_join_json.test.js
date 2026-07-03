@@ -1,6 +1,7 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 
-export async function testJoinJson(c) {
+test('testJoinJson', async () => {
   let user = {
     name: 'Join JSON User',
     email: 'joinjson@example.com',
@@ -9,7 +10,7 @@ export async function testJoinJson(c) {
     method: 'POST',
     body: { user },
   })
-  assert(r.user)
+  expect(r.user).toBeDefined()
   let userId = r.user.id
 
   let post1 = {
@@ -55,12 +56,9 @@ export async function testJoinJson(c) {
     body: q,
   })
 
-  assert(res.users)
-  // Should find the user because they have a post with rating 5
-  // Note: Since we use join with string table name for posts, we might only get user object back in a wrapper
-  // e.g. { user: {...} }
+  expect(res.users).toBeDefined()
   let found = res.users.find((u) => (u.user ? u.user.id : u.id) === userId)
-  assert(found, 'Should find the user with the rated post (rating 5)')
+  expect(found).toBeDefined()
 
   // Let's also test the negative case
   let q2 = {
@@ -77,7 +75,7 @@ export async function testJoinJson(c) {
     method: 'POST',
     body: q2,
   })
-  assert(res2.users)
+  expect(res2.users).toBeDefined()
   let found2 = res2.users.find((u) => (u.user ? u.user.id : u.id) === userId)
-  assert(!found2, 'Should NOT find the user with rating 999')
-}
+  expect(found2).toBeUndefined()
+})
