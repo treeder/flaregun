@@ -1,6 +1,7 @@
-import { assert } from 'testkit'
+import { test, expect } from 'vitest'
+import { c } from './helper.js'
 
-export async function testBatch(c) {
+test('testBatch', async () => {
   let user1 = {
     name: 'Batch User 1',
     email: 'batch1@example.com',
@@ -22,13 +23,13 @@ export async function testBatch(c) {
   
   user1.name = 'Rebatch User 1'
   user2.name = 'Rebatch User 2'
-  let rb = await c.api.fetch(`/v1/users/batch`, {
+  await c.api.fetch(`/v1/users/batch`, {
     method: 'POST',
     body: { users: [user1, user2] },
   })
 
   r1 = await c.api.fetch(`/v1/users/${user1.id}`)
   r2 = await c.api.fetch(`/v1/users/${user2.id}`)
-  assert(r1.user.name == 'Rebatch User 1')
-  assert(r2.user.name == 'Rebatch User 2')
-}
+  expect(r1.user.name).toBe('Rebatch User 1')
+  expect(r2.user.name).toBe('Rebatch User 2')
+})
