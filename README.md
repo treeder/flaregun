@@ -53,9 +53,34 @@ let users = await d1.query('users', {
   limit: 100,
 })
 
+// OR queries
+let where = []
+where.push([['showAt', '<=', now], 'OR', ['showAt', 'IS', null]])
+let users = await d1.query('users', {
+  where,
+})
+
 // querying JSON data using path notation
 let users = await d1.query('users', {
   where: [['data.awesome', '=', true]],
+})
+
+// join queries
+let users = await d1.query('users', {
+  where: [
+    ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)],
+  ],
+  join: [{
+      type: 'INNER',
+      table: OrgUser,
+      on: ['id', '=', 'userId'],
+      where: {
+        // this is the same as regular where, but applies to this table
+        status: 'active',
+      },
+  },],
+  order: ['createdAt', 'asc'],
+  limit: 100,
 })
 
 // counts
