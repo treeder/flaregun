@@ -3,12 +3,6 @@ function escapeRegex(str) {
   return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
 }
 
-// Helper to check if middleware path is a prefix of request path
-function middlewareMatches(middlewarePath, requestPath) {
-  if (middlewarePath === '/') return true
-  return requestPath === middlewarePath || requestPath.startsWith(middlewarePath + '/')
-}
-
 // Sort routes: static segments first, then params, then catchalls
 function getSegmentScore(segment) {
   if (segment.startsWith('[[') && segment.endsWith(']]')) {
@@ -18,6 +12,36 @@ function getSegmentScore(segment) {
     return 1 // Parameter: medium priority
   }
   return 0 // Static: highest priority
+}
+
+function parsePathPattern(pathStr, isMiddleware = false) {
+  const segments = pathStr.split('/').filter(Boolean)
+  let regexStr = ''
+  const paramNames = []
+
+  for (const segment of segments) {
+    if (segment.startsWith('[[') && segment.endsWith(']]')) {
+      const name = segment.slice(2, -2)
+      paramNames.push({ name, isCatchAll: true })
+      regexStr += '(?:/(.*))?'
+    } else if (segment.startsWith('[') && segment.endsWith(']')) {
+      const name = segment.slice(1, -1)
+      paramNames.push({ name, isCatchAll: false })
+      regexStr += '/([^/]+)'
+    } else {
+      regexStr += '/' + escapeRegex(segment)
+    }
+  }
+
+  if (regexStr === '') {
+    regexStr = '/'
+  }
+
+  const regex = isMiddleware
+    ? (regexStr === '/' ? new RegExp('^(?:/.*)?$') : new RegExp(`^${regexStr}(?:/.*)?$`))
+    : new RegExp(`^${regexStr}/?$`)
+
+  return { regex, paramNames, segments }
 }
 
 async function resolveHandlers(module, method) {
@@ -53,9 +77,14 @@ export function createWorker(options = {}) {
       let prefix = relPath.slice(0, -'/_middleware.js'.length)
       if (prefix === '') prefix = '/'
 
+      const { regex, paramNames, segments } = parsePathPattern(prefix, true)
+
       middlewares.push({
         key,
         prefix,
+        regex,
+        paramNames,
+        segments,
         importModule: modules[key],
       })
     } else {
@@ -72,34 +101,14 @@ export function createWorker(options = {}) {
         routePath = '/'
       }
 
-      // Parse path segments to build regex and collect param names
-      const segments = routePath.split('/').filter(Boolean)
-      let regexStr = ''
-      const paramNames = []
-
-      for (const segment of segments) {
-        if (segment.startsWith('[[') && segment.endsWith(']]')) {
-          const name = segment.slice(2, -2)
-          paramNames.push({ name, isCatchAll: true })
-          regexStr += '(?:/(.*))?'
-        } else if (segment.startsWith('[') && segment.endsWith(']')) {
-          const name = segment.slice(1, -1)
-          paramNames.push({ name, isCatchAll: false })
-          regexStr += '/([^/]+)'
-        } else {
-          regexStr += '/' + escapeRegex(segment)
-        }
-      }
-      if (regexStr === '') {
-        regexStr = '/'
-      }
-      const regex = new RegExp(`^${regexStr}/?$`)
+      const { regex, paramNames, segments } = parsePathPattern(routePath, false)
 
       routes.push({
         key,
         routePath,
         regex,
         paramNames,
+        segments,
         importModule: modules[key],
       })
     }
@@ -107,21 +116,29 @@ export function createWorker(options = {}) {
 
   // Sort routes: static segments first, then params, then catchalls
   routes.sort((a, b) => {
-    const segsA = a.routePath.split('/').filter(Boolean)
-    const segsB = b.routePath.split('/').filter(Boolean)
-    const minLen = Math.min(segsA.length, segsB.length)
+    const minLen = Math.min(a.segments.length, b.segments.length)
     for (let i = 0; i < minLen; i++) {
-      const scoreA = getSegmentScore(segsA[i])
-      const scoreB = getSegmentScore(segsB[i])
+      const scoreA = getSegmentScore(a.segments[i])
+      const scoreB = getSegmentScore(b.segments[i])
       if (scoreA !== scoreB) {
         return scoreA - scoreB
       }
     }
-    return segsB.length - segsA.length
+    return b.segments.length - a.segments.length
   })
 
-  // Sort middlewares by prefix length ascending (root first)
-  middlewares.sort((a, b) => a.prefix.length - b.prefix.length)
+  // Sort middlewares by segment count ascending (root first), then by segment score
+  middlewares.sort((a, b) => {
+    const minLen = Math.min(a.segments.length, b.segments.length)
+    for (let i = 0; i < minLen; i++) {
+      const scoreA = getSegmentScore(a.segments[i])
+      const scoreB = getSegmentScore(b.segments[i])
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB
+      }
+    }
+    return a.segments.length - b.segments.length
+  })
 
   return {
     async fetch(request, env, ctx) {
@@ -141,9 +158,26 @@ export function createWorker(options = {}) {
       }
 
       // Find matching middlewares and endpoint
-      const matchedMiddlewares = middlewares.filter((m) => middlewareMatches(m.prefix, pathname))
-      let matchedRoute = null
+      const matchedMiddlewares = []
       let params = {}
+
+      for (const m of middlewares) {
+        const match = pathname.match(m.regex)
+        if (match) {
+          matchedMiddlewares.push(m)
+          let matchIndex = 1
+          for (const paramInfo of m.paramNames) {
+            const val = match[matchIndex++]
+            if (paramInfo.isCatchAll) {
+              params[paramInfo.name] = val ? val.split('/').map(safeDecode) : []
+            } else {
+              params[paramInfo.name] = val ? safeDecode(val) : undefined
+            }
+          }
+        }
+      }
+
+      let matchedRoute = null
 
       for (const route of routes) {
         const match = pathname.match(route.regex)
