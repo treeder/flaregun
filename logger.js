@@ -41,6 +41,19 @@ export class CloudflareLogger {
   }
 
   /**
+   * Just like console.error
+   *
+   * * If last param is an object, it will show up in the logs under a `data` field.
+   * * If last param is an error, it will log as an error with all the error details.
+   */
+  error(...params) {
+    let data = this.toObject(...params)
+    data.level = 'error'
+    console.error(data)
+  }
+
+
+  /**
    * This returns the object that will be passed to console.log()
    *
    * @param  {...any} params same params as log()
@@ -96,7 +109,9 @@ export class CloudflareLogger {
           return p
         })
         .join(' ')
-      data.message += ' ' + m
+      if (m) {
+        data.message += ' ' + m
+      }
     }
     if (!data.message) data.message = 'no message'
     return data
