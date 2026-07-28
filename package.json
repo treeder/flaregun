@@ -19,6 +19,18 @@
     "pushdev": "git push origin --force `git symbolic-ref --short HEAD`:dev"
   },
   "bin": "./bin/flaregun.js",
+  "files": [
+    "bin",
+    "middleware",
+    "d1.js",
+    "errors.js",
+    "index.js",
+    "kv.js",
+    "logger.js",
+    "scheduler.js",
+    "utils.js",
+    "worker.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/treeder/flaregun.git"

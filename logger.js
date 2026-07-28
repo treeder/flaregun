@@ -32,12 +32,27 @@ export class CloudflareLogger {
    * * If last param is an error, it will log as an error with all the error details.
    */
   log(...params) {
-    let data = this.toObject(...params)
-    if (data.level == 'error') {
-      console.error(data)
-    } else {
-      console.log(data)
-    }
+    this._log('log', params)
+  }
+
+  /**
+   * Just like console.info
+   *
+   * * If last param is an object, it will show up in the logs under a `data` field.
+   * * If last param is an error, it will log as an error with all the error details.
+   */
+  info(...params) {
+    this._log('info', params)
+  }
+
+  /**
+   * Just like console.warn
+   *
+   * * If last param is an object, it will show up in the logs under a `data` field.
+   * * If last param is an error, it will log as an error with all the error details.
+   */
+  warn(...params) {
+    this._log('warn', params)
   }
 
   /**
@@ -47,9 +62,16 @@ export class CloudflareLogger {
    * * If last param is an error, it will log as an error with all the error details.
    */
   error(...params) {
+    this._log('error', params)
+  }
+
+  _log(level, params) {
     let data = this.toObject(...params)
-    data.level = 'error'
-    console.error(data)
+    if (level !== 'log') {
+      data.level = level
+    }
+    let method = data.level === 'error' ? 'error' : level
+    console[method](data)
   }
 
 

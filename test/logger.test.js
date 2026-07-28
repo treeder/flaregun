@@ -1,18 +1,36 @@
 import { test, expect, vi } from 'vitest'
 import { CloudflareLogger } from '../logger.js'
 
-test('CloudflareLogger log and error methods', () => {
+test('CloudflareLogger log, info, warn, and error methods', () => {
   const logger = new CloudflareLogger({ data: { env: 'test' } })
 
   const spyLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+  const spyInfo = vi.spyOn(console, 'info').mockImplementation(() => {})
+  const spyWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   const spyError = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-  logger.log('info message')
+  logger.log('log message')
   expect(spyLog).toHaveBeenCalledTimes(1)
   expect(spyLog).toHaveBeenCalledWith({
     env: 'test',
     level: 'info',
+    message: 'log message',
+  })
+
+  logger.info('info message')
+  expect(spyInfo).toHaveBeenCalledTimes(1)
+  expect(spyInfo).toHaveBeenCalledWith({
+    env: 'test',
+    level: 'info',
     message: 'info message',
+  })
+
+  logger.warn('warn message')
+  expect(spyWarn).toHaveBeenCalledTimes(1)
+  expect(spyWarn).toHaveBeenCalledWith({
+    env: 'test',
+    level: 'warn',
+    message: 'warn message',
   })
 
   logger.error('error message')
@@ -33,6 +51,8 @@ test('CloudflareLogger log and error methods', () => {
   expect(lastErrorCall.error.message).toBe('something failed')
 
   spyLog.mockRestore()
+  spyInfo.mockRestore()
+  spyWarn.mockRestore()
   spyError.mockRestore()
 })
 
