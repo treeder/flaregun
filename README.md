@@ -189,6 +189,9 @@ This makes it easy to handle events on a schedule.
 ```js
 const scheduler = new Scheduler()
 scheduler.addEventListener('hour', myFunction)
+
+// Daily schedules run at 00:00 (midnight) by default, or specify the hour (0-23):
+scheduler.addEventListener('day', myDailyFunction, { hour: 2 }) // runs daily at 2:00 AM UTC
 ```
 
 That will call `myFunction(c)` every hour. You can use minute, hour, day, week, month, 5minutes, 15minutes.

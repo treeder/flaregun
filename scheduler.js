@@ -15,10 +15,11 @@ export class Scheduler {
    *
    * @param {*} interval is a string like "minute", "hour", "day", etc.
    * @param {*} listener an event listener that accepts a CustomEvent paramter
+   * @param {*} [options] optional configuration for this listener (e.g. { hour: 2 })
    */
-  addEventListener(interval, listener) {
+  addEventListener(interval, listener, options = {}) {
     this.listeners[interval] ||= []
-    this.listeners[interval].push(listener)
+    this.listeners[interval].push({ listener, options })
   }
 
   /**
@@ -27,13 +28,32 @@ export class Scheduler {
    */
   removeEventListener(interval, listener) {
     if (!this.listeners[interval]) return
-    this.listeners[interval] = this.listeners[interval].filter((h) => h !== listener)
+    this.listeners[interval] = this.listeners[interval].filter(
+      (h) => (typeof h === 'function' ? h : h.listener) !== listener
+    )
   }
 
   dispatchEvent(evt) {
     let promises = []
     if (!this.listeners[evt.type]) return promises
-    for (let handler of this.listeners[evt.type]) {
+    const evtHour =
+      evt.hour !== undefined
+        ? evt.hour
+        : evt.controller?.scheduledTime
+          ? new Date(evt.controller.scheduledTime).getUTCHours()
+          : new Date().getUTCHours()
+
+    for (let entry of this.listeners[evt.type]) {
+      const handler = typeof entry === 'function' ? entry : entry.listener
+      const options = typeof entry === 'function' ? {} : entry.options || {}
+
+      if (evt.type === 'day') {
+        const targetHour = options.hour ?? 0
+        if (evtHour !== targetHour) {
+          continue
+        }
+      }
+
       promises.push(handler(evt))
     }
     return promises
@@ -48,66 +68,30 @@ export class Scheduler {
   async run(c, controller) {
     let st = new Date(controller.scheduledTime)
 
-    // this works if we're looking at the cron trigger:
-    // let cron = input.cron.split(' ')
-    // if (!cron[4].startsWith('*')) {
-    //   input.interval = 'week'
-    // } else if (!cron[2].startsWith('*')) {
-    //   input.interval = 'month'
-    // } else if (!cron[1].startsWith('*')) {
-    //   input.interval = 'day'
-    // } else if (!cron[0].startsWith('*')) {
-    //   // could be 0 */1 * * * or 0 * * * *
-    //   input.interval = 'hour'
-    // } else if (cron[0].startsWith('*')) {
-    //   // could be * or */1 or */5 (every 5 minutes), etc. ie: * * * * *, or */1 * * * *
-    //   input.interval = 'minute'
-    //   let split = cron[0].split('/')
-    //   if (split.length > 1) {
-    //     input.subInterval = split[1]
-    //   }
-    // }
-
-    // but better to set a single trigger and then we run decide here
-
     let promises = []
 
     // We'll always run the minute ones:
     let evt = new ScheduledEvent(c, 'minute', controller)
     promises.push(...this.dispatchEvent(evt))
 
-    if (st.getMinutes() === 0) {
+    if (st.getUTCMinutes() === 0) {
       evt = new ScheduledEvent(c, 'hour', controller)
       promises.push(...this.dispatchEvent(evt))
     }
-    if (st.getMinutes() === 0 || st.getMinutes() % 5 === 0) {
+    if (st.getUTCMinutes() === 0 || st.getUTCMinutes() % 5 === 0) {
       // todo: support subintervals like this, every 5 minutes
       evt = new ScheduledEvent(c, '5minutes', controller)
       promises.push(...this.dispatchEvent(evt))
     }
-    if (st.getMinutes() === 0 || st.getMinutes() % 15 === 0) {
+    if (st.getUTCMinutes() === 0 || st.getUTCMinutes() % 15 === 0) {
       evt = new ScheduledEvent(c, '15minutes', controller)
       promises.push(...this.dispatchEvent(evt))
     }
-    if (st.getMinutes() === 0 && st.getHours() === 0) {
-      // todo: should allow for which hour this triggers on, like 2am
+    if (st.getUTCMinutes() === 0) {
       evt = new ScheduledEvent(c, 'day', controller)
       promises.push(...this.dispatchEvent(evt))
     }
 
-    // Should we make a new event type here instead?
-    /*
-    class ScheduledEvent extends Event {
-      constructor(c, input) {
-        super(type, {})
-        this.input = input or this.detail = input
-        this.c = c
-      }
-    } 
-    */
-
-    // waitUntil doesn't seem to be working here... 🤔
-    // c.waitUntil(awaitAll(c, this.dispatchEvent(evt)))
     await awaitAll(c, promises)
   }
 }
@@ -118,5 +102,8 @@ class ScheduledEvent extends Event {
     this.controller = controller
     this.c = c
     this.detail = this.controller
+    if (controller?.scheduledTime) {
+      this.hour = new Date(controller.scheduledTime).getUTCHours()
+    }
   }
 }
