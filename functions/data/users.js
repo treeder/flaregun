@@ -1,5 +1,3 @@
-
-
 // First define your models as classes:
 export class User {
   static table = 'users'
@@ -25,6 +23,14 @@ export class User {
     },
     data: {
       type: Object,
-    }
+      migratedToUserId: {
+        type: String,
+        index: true,
+      },
+      someValue: {
+        type: String,
+        index: true,
+      },
+    },
   }
 }
