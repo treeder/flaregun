@@ -67,10 +67,9 @@ let users = await d1.query('users', {
 
 // join queries
 let users = await d1.query('users', {
-  where: [
-    ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)],
-  ],
-  join: [{
+  where: [['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
+  join: [
+    {
       type: 'INNER',
       table: OrgUser,
       on: ['id', '=', 'userId'],
@@ -78,7 +77,8 @@ let users = await d1.query('users', {
         // this is the same as regular where, but applies to this table
         status: 'active',
       },
-  },],
+    },
+  ],
   order: ['createdAt', 'asc'],
   limit: 100,
 })
@@ -117,7 +117,7 @@ export class User {
       type: String,
     },
     data: {
-      type: Object, // this is stored as a JSON object so you can stuff anything in here and still query on it.
+      type: Object, // stored as JSON; you can add sub-fields with `index: true` for automatic SQLite expression indexes
     },
   }
 }
