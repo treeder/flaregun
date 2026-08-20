@@ -263,11 +263,40 @@ export class D1 {
     if (w.length > 0) s += ' WHERE ' + w.join(' ')
 
     if (q.order) {
-      let o = q.order[0]
-      if (q.join && !o.includes('.')) {
-        o = mainTableName + '.' + o
+      let prefix = q.join ? mainTableName : null
+      let orderClauses = []
+
+      if (typeof q.order === 'string') {
+        orderClauses.push(q.order)
+      } else if (Array.isArray(q.order)) {
+        if (q.order.length > 0) {
+          if (Array.isArray(q.order[0])) {
+            for (const item of q.order) {
+              if (Array.isArray(item) && item.length > 0) {
+                let o = this.processCol(item[0], knownTables, prefix)
+                let dir = item[1] ? ` ${item[1]}` : ''
+                orderClauses.push(`${o}${dir}`)
+              } else if (typeof item === 'string') {
+                orderClauses.push(this.processCol(item, knownTables, prefix))
+              }
+            }
+          } else {
+            let o = this.processCol(q.order[0], knownTables, prefix)
+            let dir = q.order[1] ? ` ${q.order[1]}` : ''
+            orderClauses.push(`${o}${dir}`)
+          }
+        }
+      } else if (typeof q.order === 'object') {
+        for (const [col, dir] of Object.entries(q.order)) {
+          let o = this.processCol(col, knownTables, prefix)
+          let d = dir ? ` ${dir}` : ''
+          orderClauses.push(`${o}${d}`)
+        }
       }
-      s += ' ORDER BY ' + o + ' ' + q.order[1]
+
+      if (orderClauses.length > 0) {
+        s += ' ORDER BY ' + orderClauses.join(', ')
+      }
     }
     if (q.limit) s += ' LIMIT ' + q.limit
     if (q.offset) s += ' OFFSET ' + q.offset

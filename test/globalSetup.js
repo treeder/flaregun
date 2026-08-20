@@ -3,9 +3,11 @@ import http from 'http'
 
 let serverProcess
 
+const port = process.env.TEST_PORT || 8790
+
 export async function setup() {
-  console.log('🚀 Starting dev server in globalSetup...')
-  serverProcess = spawn('npm', ['run', 'run'], {
+  console.log(`🚀 Starting dev server on port ${port} in globalSetup...`)
+  serverProcess = spawn('npx', ['wrangler', 'dev', '--env', 'dev', '--port', String(port)], {
     shell: true,
     stdio: 'inherit',
     detached: process.platform !== 'win32',
@@ -25,7 +27,7 @@ export async function setup() {
     
     try {
       await new Promise((resolve, reject) => {
-        const req = http.get('http://localhost:8787/', (res) => {
+        const req = http.get(`http://localhost:${port}/`, (res) => {
           res.resume()
           resolve()
         })

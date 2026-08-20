@@ -53,6 +53,14 @@ let users = await d1.query('users', {
   limit: 100,
 })
 
+// multiple order clauses
+let users = await d1.query('users', {
+  order: [
+    ['lastName', 'asc'],
+    ['firstName', 'asc'],
+  ],
+})
+
 // OR queries
 let where = []
 where.push([['showAt', '<=', now], 'OR', ['showAt', 'IS', null]])
