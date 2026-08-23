@@ -62,4 +62,14 @@ test('testObjectQuery', async () => {
   expect(res2.users).toBeDefined()
   expect(res2.users.find(u => u.id === r1.user.id)).toBeDefined()
   expect(res2.users.find(u => u.id === r2.user.id)).toBeUndefined()
+
+  // Test object query with Date object
+  let q3 = {
+    where: { createdAt: new Date(r1.user.createdAt) }
+  }
+  let res3 = await c.api.fetch(`/v1/users/query`, {
+    method: 'POST',
+    body: q3
+  })
+  expect(res3.users).toBeDefined()
 })

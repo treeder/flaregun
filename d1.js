@@ -339,7 +339,7 @@ export class D1 {
           w.push(`${k} IS NULL`)
         } else {
           w.push(`${k} = ?`)
-          binds.push(v)
+          binds.push(this.toValue(v))
         }
         i++
       }
