@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'path'
 import { exec } from 'child_process'
+import * as esbuild from 'esbuild'
 
 export async function build(args) {
   console.log('building...')
@@ -45,18 +46,27 @@ async function fileExists(filePath) {
 async function postBuild() {
   // check if scheduled or queue functions available
   let add = ''
+  let prepends = ''
+
   try {
     const filePath = path.resolve(process.cwd(), './functions/queue.js')
     if (await fileExists(filePath)) {
-      let s = await transformFileContents(filePath, 'queue')
+      const res = await esbuild.build({
+        entryPoints: [filePath],
+        bundle: true,
+        format: 'iife',
+        globalName: '__queue_module__',
+        write: false,
+        target: 'es2022',
+      })
+      prepends += res.outputFiles[0].text + '\n'
 
       add += `
       async queue(batch, env, ctx) {
-        ${s}
         ctx.data = {}
         ctx.env = env
         ctx.batch = batch
-        return await queue2(ctx)
+        return await __queue_module__.queue(ctx)
       },
     `
     }
@@ -67,15 +77,22 @@ async function postBuild() {
   try {
     const filePath = path.resolve(process.cwd(), './functions/scheduled.js')
     if (await fileExists(filePath)) {
-      let s = await transformFileContents(filePath, 'scheduled')
+      const res = await esbuild.build({
+        entryPoints: [filePath],
+        bundle: true,
+        format: 'iife',
+        globalName: '__scheduled_module__',
+        write: false,
+        target: 'es2022',
+      })
+      prepends += res.outputFiles[0].text + '\n'
 
       add += `
       async scheduled(controller, env, ctx) {
-        ${s}
         ctx.data = {}
         ctx.env = env
         ctx.controller = controller
-        return await scheduled2(ctx)
+        return await __scheduled_module__.scheduled(ctx)
       },
     `
     }
@@ -93,7 +110,7 @@ async function postBuild() {
 
   const searchString = 'var pages_template_worker_default'
   const lines = data.split('\n')
-  let modifiedData = ''
+  let modifiedData = prepends
 
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].includes(searchString)) {
@@ -107,26 +124,4 @@ async function postBuild() {
 
   await fs.writeFile(filePath, modifiedData, 'utf8')
   console.log('File modified successfully!')
-}
-
-async function transformFileContents(filePath, functionName) {
-  // const module = await import(filePath)
-  // console.log(module)
-
-  let contents = (await fs.readFile(filePath)).toString()
-  let lines = contents.split('\n')
-
-  let qs = ''
-  let rename = `${functionName}(`
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i]
-    if (line.startsWith('//')) continue
-    if (line.startsWith('import')) continue
-    if (line.includes(rename)) {
-      qs += line.replace(rename, `${functionName}2(`).replace('export', '') + '\n'
-    } else {
-      qs += line + '\n'
-    }
-  }
-  return qs
 }
