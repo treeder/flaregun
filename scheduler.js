@@ -83,6 +83,10 @@ export class Scheduler {
       evt = new ScheduledEvent(c, '5minutes', controller)
       promises.push(...this.dispatchEvent(evt))
     }
+    if (st.getUTCMinutes() === 0 || st.getUTCMinutes() % 10 === 0) {
+      evt = new ScheduledEvent(c, '10minutes', controller)
+      promises.push(...this.dispatchEvent(evt))
+    }
     if (st.getUTCMinutes() === 0 || st.getUTCMinutes() % 15 === 0) {
       evt = new ScheduledEvent(c, '15minutes', controller)
       promises.push(...this.dispatchEvent(evt))

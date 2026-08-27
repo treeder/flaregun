@@ -20,22 +20,38 @@ describe('Scheduler', () => {
     expect(fn).toHaveBeenCalledTimes(1)
   })
 
-  it('runs 5minutes and 15minutes events appropriately', async () => {
+  it('runs 5minutes, 10minutes, and 15minutes events appropriately', async () => {
     const scheduler = new Scheduler()
     const fn5 = vi.fn()
+    const fn10 = vi.fn()
     const fn15 = vi.fn()
 
     scheduler.addEventListener('5minutes', fn5)
+    scheduler.addEventListener('10minutes', fn10)
     scheduler.addEventListener('15minutes', fn15)
 
-    // At 10:10:00: 5minutes should trigger, 15minutes should not
-    await scheduler.run(mockContext, createMockController('2026-08-10T10:10:00Z'))
+    // At 10:05:00: 5minutes triggers, 10minutes and 15minutes do not
+    await scheduler.run(mockContext, createMockController('2026-08-10T10:05:00Z'))
     expect(fn5).toHaveBeenCalledTimes(1)
+    expect(fn10).toHaveBeenCalledTimes(0)
     expect(fn15).toHaveBeenCalledTimes(0)
 
-    // At 10:15:00: both should trigger
-    await scheduler.run(mockContext, createMockController('2026-08-10T10:15:00Z'))
+    // At 10:10:00: 5minutes and 10minutes trigger, 15minutes does not
+    await scheduler.run(mockContext, createMockController('2026-08-10T10:10:00Z'))
     expect(fn5).toHaveBeenCalledTimes(2)
+    expect(fn10).toHaveBeenCalledTimes(1)
+    expect(fn15).toHaveBeenCalledTimes(0)
+
+    // At 10:15:00: 5minutes and 15minutes trigger, 10minutes does not
+    await scheduler.run(mockContext, createMockController('2026-08-10T10:15:00Z'))
+    expect(fn5).toHaveBeenCalledTimes(3)
+    expect(fn10).toHaveBeenCalledTimes(1)
+    expect(fn15).toHaveBeenCalledTimes(1)
+
+    // At 10:20:00: 5minutes and 10minutes trigger
+    await scheduler.run(mockContext, createMockController('2026-08-10T10:20:00Z'))
+    expect(fn5).toHaveBeenCalledTimes(4)
+    expect(fn10).toHaveBeenCalledTimes(2)
     expect(fn15).toHaveBeenCalledTimes(1)
   })
 
