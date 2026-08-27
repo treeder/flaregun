@@ -44,6 +44,7 @@
   "dependencies": {
     "api": "github:treeder/api#semver:^1",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.1",
     "jsonc-parse": "^2.0.0",
     "models": "github:treeder/models#semver:^1",
     "nanoid": "^6.0.1"
