@@ -29,7 +29,7 @@ export function hostURL(c) {
 export function domainLevels(c) {
   const host = hostname(c)
   if (!host) return 2
-  return host.endsWith('workers.dev') || host.endsWith('pages.dev') ? 3 : 2
+  return host.endsWith('.workers.dev') || host.endsWith('.pages.dev') ? 3 : 2
 }
 
 export async function awaitAll(c, promises) {
