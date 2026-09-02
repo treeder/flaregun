@@ -4,5 +4,6 @@ import { Scheduler } from './scheduler.js'
 import { ErrorHandler } from './errors.js'
 import { CloudflareLogger } from './logger.js'
 import { createWorker } from './worker.js'
+import { awaitAll, hostname, hostURL, domainLevels } from './utils.js'
 
-export { D1, KV, Scheduler, ErrorHandler, CloudflareLogger, createWorker }
+export { D1, KV, Scheduler, ErrorHandler, CloudflareLogger, createWorker, awaitAll, hostname, hostURL, domainLevels }
