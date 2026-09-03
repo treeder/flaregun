@@ -108,7 +108,7 @@ export class CloudflareLogger {
       data.level = 'error'
       data.error = serializeError(err)
       if (err.cause) {
-        const causeMsg = formatCauseChain(err.cause)
+        const causeMsg = formatCauseChain(err.cause, new WeakSet([err]))
         if (causeMsg) {
           if (data.message) {
             data.message += ` (caused by: ${causeMsg})`
@@ -150,12 +150,16 @@ export class CloudflareLogger {
   }
 }
 
-export function serializeError(err) {
+export function serializeError(err, seen = new WeakSet()) {
   if (!err) return null
   if (!(err instanceof Error)) {
     if (typeof err === 'object') return err
     return { message: String(err) }
   }
+  if (seen.has(err)) {
+    return { name: err.name, message: '[Circular Reference]', stack: err.stack }
+  }
+  seen.add(err)
   const data = {
     name: err.name,
     message: err.message,
@@ -163,15 +167,22 @@ export function serializeError(err) {
     stack: err.stack,
   }
   if (err.cause !== undefined) {
-    data.cause = serializeError(err.cause)
+    data.cause = serializeError(err.cause, seen)
   }
   return data
 }
 
-function formatCauseChain(cause) {
+function formatCauseChain(cause, seen = new WeakSet()) {
   const messages = []
   let curr = cause
   while (curr) {
+    if (typeof curr === 'object' && curr !== null) {
+      if (seen.has(curr)) {
+        messages.push('[Circular Reference]')
+        break
+      }
+      seen.add(curr)
+    }
     if (curr instanceof Error) {
       if (curr.message) messages.push(curr.message)
       curr = curr.cause

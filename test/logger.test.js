@@ -108,3 +108,20 @@ test('CloudflareLogger formats and serializes error cause chains', () => {
 
   spyError.mockRestore()
 })
+
+test('CloudflareLogger handles circular references in error causes gracefully', () => {
+  const logger = new CloudflareLogger({ data: { env: 'test' } })
+  const spyError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  const cyclicErr = new Error('cyclic error')
+  cyclicErr.cause = cyclicErr
+
+  logger.error(cyclicErr)
+  expect(spyError).toHaveBeenCalledTimes(1)
+  const logged = spyError.mock.calls[0][0]
+  expect(logged.level).toBe('error')
+  expect(logged.message).toBe('cyclic error (caused by: [Circular Reference])')
+  expect(logged.error.cause.message).toBe('[Circular Reference]')
+
+  spyError.mockRestore()
+})

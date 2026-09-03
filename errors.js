@@ -57,7 +57,16 @@ export class ErrorHandler {
 
       let causeStr = ''
       let currentCause = err.cause
+      const seenCauses = new WeakSet()
+      if (typeof err === 'object' && err !== null) seenCauses.add(err)
       while (currentCause) {
+        if (typeof currentCause === 'object' && currentCause !== null) {
+          if (seenCauses.has(currentCause)) {
+            causeStr += '\n\nCaused by: [Circular Reference]'
+            break
+          }
+          seenCauses.add(currentCause)
+        }
         if (currentCause instanceof Error) {
           causeStr += `\n\nCaused by: ${currentCause.name}: ${currentCause.message}\n${currentCause.stack || ''}`
           currentCause = currentCause.cause
@@ -69,6 +78,8 @@ export class ErrorHandler {
           break
         }
       }
+
+      let dataStr = this.logger?.data ? '\n\n' + JSON.stringify(this.logger.data, null, '  ') : ''
 
       let message = `${err.name}: ${err.message}${causeStr}${dataStr}\n\n${err.stack}`
       if (this.options.appName) message = `${this.options.appName}\n${message}`
