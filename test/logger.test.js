@@ -73,3 +73,55 @@ test('CloudflareLogger contextual cloning with .with()', () => {
 
   spyError.mockRestore()
 })
+
+test('CloudflareLogger formats and serializes error cause chains', () => {
+  const logger = new CloudflareLogger({ data: { env: 'test' } })
+  const spyError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  const rootErr = new Error('root cause failure')
+  const outerErr = new Error('operation failed', { cause: rootErr })
+
+  logger.error('an error occurred', outerErr)
+
+  expect(spyError).toHaveBeenCalledTimes(1)
+  const logged = spyError.mock.calls[0][0]
+  expect(logged.level).toBe('error')
+  expect(logged.message).toBe('an error occurred operation failed (caused by: root cause failure)')
+  expect(logged.error).toBeDefined()
+  expect(logged.error.message).toBe('operation failed')
+  expect(logged.error.cause).toBeDefined()
+  expect(logged.error.cause.message).toBe('root cause failure')
+  expect(logged.error.cause.stack).toBeDefined()
+
+  // Test nested cause chains
+  const deepRoot = new Error('database connection timeout')
+  const midErr = new Error('query execution failed', { cause: deepRoot })
+  const topErr = new Error('request handler failed', { cause: midErr })
+
+  logger.error(topErr)
+  expect(spyError).toHaveBeenCalledTimes(2)
+  const loggedNested = spyError.mock.calls[1][0]
+  expect(loggedNested.message).toBe(
+    'request handler failed (caused by: query execution failed: database connection timeout)',
+  )
+  expect(loggedNested.error.cause.cause.message).toBe('database connection timeout')
+
+  spyError.mockRestore()
+})
+
+test('CloudflareLogger handles circular references in error causes gracefully', () => {
+  const logger = new CloudflareLogger({ data: { env: 'test' } })
+  const spyError = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+  const cyclicErr = new Error('cyclic error')
+  cyclicErr.cause = cyclicErr
+
+  logger.error(cyclicErr)
+  expect(spyError).toHaveBeenCalledTimes(1)
+  const logged = spyError.mock.calls[0][0]
+  expect(logged.level).toBe('error')
+  expect(logged.message).toBe('cyclic error (caused by: [Circular Reference])')
+  expect(logged.error.cause.message).toBe('[Circular Reference]')
+
+  spyError.mockRestore()
+})
