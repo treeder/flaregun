@@ -77,6 +77,13 @@ test('test multiple order clauses', async () => {
       ],
     },
   })
+  expect(r4.users).toBeDefined()
+  expect(r4.users.length).toBe(4)
+  expect(r4.users[0].email).toBe(`order_b2_${timestamp}@example.com`)
+  expect(r4.users[1].email).toBe(`order_a1_${timestamp}@example.com`)
+  expect(r4.users[2].email).toBe(`order_b1_${timestamp}@example.com`)
+  expect(r4.users[3].email).toBe(`order_a2_${timestamp}@example.com`)
+
   // 5. Test unary + prefix ordering with table qualifier and without
   let r5 = await c.api.fetch(`/v1/users/query`, {
     method: 'POST',
