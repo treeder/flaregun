@@ -74,7 +74,6 @@ export class CloudflareLogger {
     console[method](data)
   }
 
-
   /**
    * This returns the object that will be passed to console.log()
    *
@@ -107,11 +106,16 @@ export class CloudflareLogger {
     if (err) {
       data.message = err.message
       data.level = 'error'
-      data.error = {
-        message: err.message,
-        stack: err.stack,
-        status: err.status,
-        cause: err.cause,
+      data.error = serializeError(err)
+      if (err.cause) {
+        const causeMsg = formatCauseChain(err.cause)
+        if (causeMsg) {
+          if (data.message) {
+            data.message += ` (caused by: ${causeMsg})`
+          } else {
+            data.message = `caused by: ${causeMsg}`
+          }
+        }
       }
     }
     if (params.length > 0) {
@@ -144,4 +148,40 @@ export class CloudflareLogger {
   isPlainObject(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object
   }
+}
+
+export function serializeError(err) {
+  if (!err) return null
+  if (!(err instanceof Error)) {
+    if (typeof err === 'object') return err
+    return { message: String(err) }
+  }
+  const data = {
+    name: err.name,
+    message: err.message,
+    status: err.status,
+    stack: err.stack,
+  }
+  if (err.cause !== undefined) {
+    data.cause = serializeError(err.cause)
+  }
+  return data
+}
+
+function formatCauseChain(cause) {
+  const messages = []
+  let curr = cause
+  while (curr) {
+    if (curr instanceof Error) {
+      if (curr.message) messages.push(curr.message)
+      curr = curr.cause
+    } else if (typeof curr === 'object' && curr.message) {
+      messages.push(curr.message)
+      curr = curr.cause
+    } else {
+      messages.push(String(curr))
+      break
+    }
+  }
+  return messages.join(': ')
 }

@@ -55,9 +55,22 @@ export class ErrorHandler {
       postTo.options.method ||= 'POST'
       let options = { ...postTo.options }
 
-      let dataStr = this.logger.data ? '\n\n' + JSON.stringify(this.logger.data, null, '  ') : ''
+      let causeStr = ''
+      let currentCause = err.cause
+      while (currentCause) {
+        if (currentCause instanceof Error) {
+          causeStr += `\n\nCaused by: ${currentCause.name}: ${currentCause.message}\n${currentCause.stack || ''}`
+          currentCause = currentCause.cause
+        } else if (typeof currentCause === 'object') {
+          causeStr += `\n\nCaused by: ${JSON.stringify(currentCause, null, '  ')}`
+          currentCause = currentCause.cause
+        } else {
+          causeStr += `\n\nCaused by: ${String(currentCause)}`
+          break
+        }
+      }
 
-      let message = `${err.name}: ${err.message}${dataStr}\n\n${err.stack}`
+      let message = `${err.name}: ${err.message}${causeStr}${dataStr}\n\n${err.stack}`
       if (this.options.appName) message = `${this.options.appName}\n${message}`
 
       if (options.body) {
