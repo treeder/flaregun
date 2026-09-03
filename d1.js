@@ -349,7 +349,15 @@ export class D1 {
   }
 
   processCol(col, knownTables = [], prefix = null) {
+    if (typeof col !== 'string') return col
     let q0 = col
+
+    // Preserve leading unary operators (e.g. '+threads.showAt' or '-threads.score')
+    let unary = ''
+    if ((q0.startsWith('+') || q0.startsWith('-')) && q0.length > 1) {
+      unary = q0[0]
+      q0 = q0.slice(1)
+    }
 
     // Auto prefix
     if (prefix && !(q0.includes('$') || q0.includes('('))) {
@@ -378,7 +386,7 @@ export class D1 {
         q0 = `json_extract(${split[0]}, '$.${split.slice(1).join('.')}')`
       }
     }
-    return q0
+    return unary + q0
   }
 
   singleW(q2, knownTables = [], prefix = null) {
