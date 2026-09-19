@@ -86,8 +86,9 @@ async function createDB(c, d1) {
 }
 
 async function createKV(c, kv, workerName) {
-  const bindingName = kv.binding
-  const autoName = workerName ? `${workerName}-${bindingName.toLowerCase().replaceAll('_', '-')}` : bindingName
+  const bindingName = kv.binding || 'kv'
+  const normalisedBinding = bindingName.toLowerCase().replaceAll('_', '-')
+  const autoName = workerName ? `${workerName}-${normalisedBinding}` : normalisedBinding
   const title = kv.title || autoName
   // if (kv.id) {
   //   return
