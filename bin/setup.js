@@ -34,10 +34,10 @@ async function parseWrangler(c) {
     console.log(`Creating resources for environment: ${env}`)
     let prod = wranglerConfig.env[env]
     // let prod = wranglerConfig.env.prod
-    // console.log(prod)
+    let workerName = prod.name || wranglerConfig.name
     for (let kv of prod.kv_namespaces) {
       console.log(kv)
-      await createKV(c, kv)
+      await createKV(c, kv, workerName)
     }
     for (let d1 of prod.d1_databases) {
       console.log(d1)
@@ -85,27 +85,31 @@ async function createDB(c, d1) {
   d1.database_id = r.result.uuid
 }
 
-async function createKV(c, kv) {
+async function createKV(c, kv, workerName) {
+  const bindingName = kv.binding || 'kv'
+  const normalisedBinding = bindingName.toLowerCase().replaceAll('_', '-')
+  const autoName = workerName ? `${workerName}-${normalisedBinding}` : normalisedBinding
+  const title = kv.title || autoName
   // if (kv.id) {
   //   return
   // }
   // check if exists first
   let r = await fetchCF(c, '/storage/kv/namespaces', {
-    q: { title: kv.title },
+    q: { title },
   })
   console.log(r)
   for (let kstore of r.result) {
-    if (kstore.title === kv.title) {
-      console.log(`KV store with title ${kv.title} already exists with id ${kstore.id}`)
+    if (kstore.title === title || (workerName && (kstore.title === `${workerName}-${bindingName}` || kstore.title === workerName))) {
+      console.log(`KV store with title ${kstore.title} already exists with id ${kstore.id}`)
       kv.id = kstore.id
       return
     }
   }
-  console.log(`Creating KV store ${kv.title}`)
+  console.log(`Creating KV store ${title}`)
   r = await fetchCF(c, '/storage/kv/namespaces', {
     method: 'POST',
     body: {
-      title: kv.title,
+      title,
       // primary_location_hint: "wnam"
     },
   })

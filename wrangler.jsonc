@@ -21,7 +21,6 @@
       "kv_namespaces": [
         {
           "binding": "KV",
-          "title": "flaregun-dev",
           "id": "0a5bdf2a494a4d8cb0d1d5d8e26827f7",
         },
       ],
@@ -68,7 +67,6 @@
       "kv_namespaces": [
         {
           "binding": "KV",
-          "title": "flaregun-prod",
           "id": "98db8d8b30984b0fba3ce8d4fd6ec292",
         },
       ],
