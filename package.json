@@ -5,18 +5,14 @@
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && npx -y wrangler dev --env dev --live-reload",
+    "start": "npm install && npx -y wrangler dev --live-reload",
     "build": "npx -y treeder/flaregun build",
-    "run": "npx -y wrangler dev --env dev",
+    "run": "npx -y wrangler dev",
     "test:run": "vitest run",
     "test": "vitest run",
     "setup": "npx -y treeder/flaregun setup",
-    "deploy": "npx -y wrangler deploy --env dev",
-    "deploy:preview": "npx -y wrangler versions upload --env dev",
-    "deploy:dev": "npx -y wrangler deploy --env dev",
-    "deploy:prod": "npx -y wrangler deploy --env prod",
-    "deploy:prod:preview": "npx -y wrangler versions upload --env prod",
-    "pushdev": "git push origin --force `git symbolic-ref --short HEAD`:dev"
+    "deploy": "npx -y wrangler deploy",
+    "deploy:preview": "npx -y wrangler preview"
   },
   "bin": "./bin/flaregun.js",
   "files": [
