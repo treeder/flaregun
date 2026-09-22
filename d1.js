@@ -393,17 +393,19 @@ export class D1 {
     let w = []
     let binds = []
     let q0 = this.processCol(q2[0], knownTables, prefix)
+    let op = q2[1]?.toLowerCase()
+    let val = q2[2]
 
-    if (q2[1].toLowerCase() == 'is null') {
+    if (op === 'is null' || ((op === '=' || op === '==' || op === 'is') && val === null)) {
       w.push(` ${q0} IS NULL`)
-    } else if (q2[1].toLowerCase() == 'is not null') {
+    } else if (op === 'is not null' || ((op === '!=' || op === '<>' || op === 'is not') && val === null)) {
       w.push(` ${q0} IS NOT NULL`)
-    } else if (q2[1].toLowerCase() == 'in') {
-      w.push(` ${q0} IN (${q2[2].map((_, i) => '?').join(',')})`)
-      binds.push(...this.toValues(q2[2]))
+    } else if (op === 'in') {
+      w.push(` ${q0} IN (${val.map((_, i) => '?').join(',')})`)
+      binds.push(...this.toValues(val))
     } else {
       w.push(` ${q0} ${q2[1]} ?`)
-      binds.push(this.toValue(q2[2]))
+      binds.push(this.toValue(val))
     }
     return { w, binds }
   }
