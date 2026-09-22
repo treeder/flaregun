@@ -43,18 +43,18 @@
   "homepage": "https://github.com/treeder/flaregun#readme",
   "dependencies": {
     "api": "github:treeder/api#semver:^1",
-    "dotenv": "^17.4.2",
-    "esbuild": "^0.28.1",
-    "jsonc-parse": "^2.0.0",
+    "dotenv": "^18.0.2",
+    "esbuild": "^0.28.2",
+    "jsonc-parse": "^2.1.0",
     "models": "github:treeder/models#semver:^1",
     "nanoid": "^6.0.1"
   },
   "devDependencies": {
-    "migrations": "github:treeder/migrations#semver:^2",
+    "migrations": "github:treeder/migrations#semver:^3",
     "once": "github:treeder/once#semver:^1",
-    "prettier": "^3.9.6",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.127.0"
+    "prettier": "^3.9.8",
+    "vitest": "^5.0.1",
+    "wrangler": "^4.136.1"
   },
   "prettier": {
     "tabWidth": 2,
