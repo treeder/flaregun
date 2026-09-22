@@ -12,7 +12,7 @@
     "test": "vitest run",
     "setup": "npx -y treeder/flaregun setup",
     "deploy": "npx -y wrangler deploy",
-    "deploy:preview": "npx -y wrangler preview"
+    "preview": "npx -y wrangler preview"
   },
   "bin": "./bin/flaregun.js",
   "files": [
