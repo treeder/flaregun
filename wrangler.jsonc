@@ -1,6 +1,6 @@
 {
   "name": "flaregun",
-  "compatibility_date": "2025-09-01",
+  "compatibility_date": "2026-09-22",
   "main": "./dist/index.js",
   "assets": {
     "directory": "./public/",
