@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { parseFile } from 'jsonc-parse'
 import { fetchCF } from './cfapi.js'
-import { writeFileSync } from 'fs'
+import { writeFileSync, existsSync } from 'fs'
 
 export async function setup(args) {
   let envFilter
@@ -24,60 +24,98 @@ export async function setup(args) {
 }
 
 async function parseWrangler(c) {
-  const wranglerConfig = await parseFile('./wrangler.jsonc')
+  const configFile = existsSync('./wrangler.jsonc')
+    ? './wrangler.jsonc'
+    : existsSync('./wrangler.json')
+      ? './wrangler.json'
+      : './wrangler.jsonc'
+  const wranglerConfig = await parseFile(configFile)
   // console.log(wranglerConfig)
 
-  for (let env in wranglerConfig.env) {
-    if (c.envFilter && env !== c.envFilter) {
-      continue
-    }
-    console.log(`Creating resources for environment: ${env}`)
-    let prod = wranglerConfig.env[env]
-    // let prod = wranglerConfig.env.prod
-    let workerName = prod.name || wranglerConfig.name
-    for (let kv of prod.kv_namespaces) {
-      console.log(kv)
-      await createKV(c, kv, workerName)
-    }
-    for (let d1 of prod.d1_databases) {
-      console.log(d1)
-      await createDB(c, d1)
-    }
-    for (let r2 of prod.r2_buckets) {
-      console.log(r2)
-      await createR2(c, r2)
-    }
-    if (prod.queues) {
-      for (let q of prod.queues.producers) {
-        console.log(q)
-        await createQueue(c, q)
+  // Top-level production resources
+  if (
+    wranglerConfig.kv_namespaces ||
+    wranglerConfig.d1_databases ||
+    wranglerConfig.r2_buckets ||
+    wranglerConfig.queues
+  ) {
+    await processResources(c, wranglerConfig, wranglerConfig.name, 'production')
+  }
+
+  // Previews resources
+  if (wranglerConfig.previews) {
+    const previewWorkerName =
+      wranglerConfig.previews.name || (wranglerConfig.name ? `${wranglerConfig.name}-preview` : 'preview')
+    await processResources(c, wranglerConfig.previews, previewWorkerName, 'previews')
+  }
+
+  // Backwards compatibility for legacy environments
+  if (wranglerConfig.env) {
+    for (let env in wranglerConfig.env) {
+      if (c.envFilter && env !== c.envFilter) {
+        continue
       }
+      let prod = wranglerConfig.env[env]
+      let workerName = prod.name || wranglerConfig.name
+      await processResources(c, prod, workerName, `environment: ${env}`)
     }
   }
-  writeFileSync('./wrangler.jsonc', JSON.stringify(wranglerConfig, null, 2))
+
+  writeFileSync(configFile, JSON.stringify(wranglerConfig, null, 2))
 
   console.log('Setup complete!')
 }
 
-async function createDB(c, d1) {
+async function processResources(c, target, workerName, label) {
+  if (!target) return
+  console.log(`Creating resources for ${label}`)
+  if (target.kv_namespaces) {
+    for (let kv of target.kv_namespaces) {
+      console.log(kv)
+      await createKV(c, kv, workerName)
+    }
+  }
+  if (target.d1_databases) {
+    for (let d1 of target.d1_databases) {
+      console.log(d1)
+      await createDB(c, d1, workerName)
+    }
+  }
+  if (target.r2_buckets) {
+    for (let r2 of target.r2_buckets) {
+      console.log(r2)
+      await createR2(c, r2, workerName)
+    }
+  }
+  if (target.queues?.producers) {
+    for (let q of target.queues.producers) {
+      console.log(q)
+      await createQueue(c, q, workerName)
+    }
+  }
+}
+
+async function createDB(c, d1, workerName) {
   // if (d1.database_id) {
   //   return
   // }
+  const dbName = d1.database_name || workerName
+  d1.database_name = dbName
   // check if exists first
   let r = await fetchCF(c, '/d1/database', {
-    q: { name: d1.database_name },
+    q: { name: dbName },
   })
   console.log(r)
   if (r.result.length > 0) {
-    console.log(`Database ${d1.database_name} already exists with id ${r.result[0].uuid}`)
+    console.log(`Database ${dbName} already exists with id ${r.result[0].uuid}`)
     d1.database_id = r.result[0].uuid
     return
   }
-  console.log(`Creating database ${d1.database_name}`)
+  console.log(`Creating database ${dbName}`)
   r = await fetchCF(c, '/d1/database', {
     method: 'POST',
     body: {
-      name: d1.database_name,
+      name: dbName,
       // primary_location_hint: "wnam"
     },
   })
@@ -99,7 +137,10 @@ async function createKV(c, kv, workerName) {
   })
   console.log(r)
   for (let kstore of r.result) {
-    if (kstore.title === title || (workerName && (kstore.title === `${workerName}-${bindingName}` || kstore.title === workerName))) {
+    if (
+      kstore.title === title ||
+      (workerName && (kstore.title === `${workerName}-${bindingName}` || kstore.title === workerName))
+    ) {
       console.log(`KV store with title ${kstore.title} already exists with id ${kstore.id}`)
       kv.id = kstore.id
       return
@@ -117,11 +158,13 @@ async function createKV(c, kv, workerName) {
   kv.id = r.result.id
 }
 
-async function createR2(c, r2) {
+async function createR2(c, r2, workerName) {
+  const bucketName = r2.bucket_name || workerName
+  r2.bucket_name = bucketName
   try {
-    let r = await fetchCF(c, `/r2/buckets/${r2.bucket_name}`, {})
+    let r = await fetchCF(c, `/r2/buckets/${bucketName}`, {})
     console.log(r)
-    console.log(`R2 bucket ${r2.bucket_name} already exists`)
+    console.log(`R2 bucket ${bucketName} already exists`)
     return
   } catch (e) {
     console.error(e, e.data)
@@ -134,24 +177,26 @@ async function createR2(c, r2) {
       }
     }
   }
-  console.log(`Creating R2 bucket ${r2.bucket_name}`)
+  console.log(`Creating R2 bucket ${bucketName}`)
   let r = await fetchCF(c, '/r2/buckets', {
     method: 'POST',
     body: {
-      name: r2.bucket_name,
+      name: bucketName,
       // primary_location_hint: "wnam"
     },
   })
   console.log(r)
 }
 
-async function createQueue(c, r2) {
-  console.log(`Creating queue ${r2.queue}`)
+async function createQueue(c, r2, workerName) {
+  const queueName = r2.queue || workerName
+  r2.queue = queueName
+  console.log(`Creating queue ${queueName}`)
   try {
     let r = await fetchCF(c, '/queues', {
       method: 'POST',
       body: {
-        queue_name: r2.queue,
+        queue_name: queueName,
         // primary_location_hint: "wnam"
       },
     })

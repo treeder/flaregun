@@ -7,7 +7,7 @@ const port = process.env.TEST_PORT || 8790
 
 export async function setup() {
   console.log(`🚀 Starting dev server on port ${port} in globalSetup...`)
-  serverProcess = spawn('npx', ['wrangler', 'dev', '--env', 'dev', '--port', String(port)], {
+  serverProcess = spawn('npx', ['wrangler', 'dev', '--port', String(port)], {
     shell: true,
     stdio: 'inherit',
     detached: process.platform !== 'win32',
@@ -15,7 +15,7 @@ export async function setup() {
 
   const start = Date.now()
   const timeout = 30000 // 30 seconds
-  
+
   while (true) {
     if (Date.now() - start > timeout) {
       throw new Error('Timeout waiting for dev server to start')
@@ -24,7 +24,7 @@ export async function setup() {
     if (serverProcess && serverProcess.exitCode !== null) {
       throw new Error('Dev server process exited prematurely with code ' + serverProcess.exitCode)
     }
-    
+
     try {
       await new Promise((resolve, reject) => {
         const req = http.get(`http://localhost:${port}/`, (res) => {
