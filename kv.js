@@ -2,22 +2,19 @@ export class KV {
   /**
    *
    * @param {*} kv cloudflare KV binding or another KV instance
-   * @param {object|string} [options] options object or prefix string
+   * @param {object} [options] options object
    * @param {string} [options.prefix] prefix string to prepend to all keys
    * @param {string} [options.delimiter] delimiter for scoping (default: ':')
    */
   constructor(kv, options = {}) {
     if (kv instanceof KV) {
       this.kv = kv.kv
-      const basePrefix = kv.prefix || ''
-      const opts = typeof options === 'string' ? { prefix: options } : options
-      this.delimiter = opts.delimiter !== undefined ? opts.delimiter : kv.delimiter
-      this.prefix = basePrefix + (opts.prefix || '')
+      this.delimiter = options.delimiter !== undefined ? options.delimiter : kv.delimiter
+      this.prefix = (kv.prefix || '') + (options.prefix || '')
     } else {
       this.kv = kv
-      const opts = typeof options === 'string' ? { prefix: options } : options
-      this.prefix = opts.prefix || ''
-      this.delimiter = opts.delimiter !== undefined ? opts.delimiter : ':'
+      this.prefix = options.prefix || ''
+      this.delimiter = options.delimiter !== undefined ? options.delimiter : ':'
     }
   }
 

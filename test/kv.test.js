@@ -210,7 +210,7 @@ describe('flaregun KV Storage interface', () => {
       const baseKV = new KV(mockBinding, { prefix: 'app:' })
       expect(baseKV.prefix).toBe('app:')
 
-      const wrappedKV = new KV(baseKV, 'sub:')
+      const wrappedKV = new KV(baseKV, { prefix: 'sub:' })
       expect(wrappedKV.prefix).toBe('app:sub:')
 
       await wrappedKV.set('key', 'val')
