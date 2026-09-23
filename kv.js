@@ -22,12 +22,12 @@ export class KV {
    * Returns a new KV instance scoped with the given prefix.
    *
    * @param {string} prefix prefix string to scope by
-   * @param {string|object} [options] delimiter string or options object { delimiter }
+   * @param {object} [options] options object
+   * @param {string} [options.delimiter] delimiter for scoping (default: ':')
    * @returns {KV}
    */
   scope(prefix, options = {}) {
-    const opts = typeof options === 'string' ? { delimiter: options } : options
-    const delimiter = opts.delimiter !== undefined ? opts.delimiter : this.delimiter
+    const delimiter = options.delimiter !== undefined ? options.delimiter : this.delimiter
     let p = String(prefix || '')
     if (p && delimiter && !p.endsWith(delimiter)) {
       p += delimiter

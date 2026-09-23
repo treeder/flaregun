@@ -129,12 +129,12 @@ describe('flaregun KV Storage interface', () => {
       const scoped2 = rootKV.scope('user:123:')
       expect(scoped2.prefix).toBe('user:123:')
 
-      // Custom delimiter string
-      const scoped3 = rootKV.scope('user/123', '/')
+      // Custom delimiter
+      const scoped3 = rootKV.scope('user/123', { delimiter: '/' })
       expect(scoped3.prefix).toBe('user/123/')
 
       // Empty delimiter
-      const scoped4 = rootKV.scope('prefix_', '')
+      const scoped4 = rootKV.scope('prefix_', { delimiter: '' })
       expect(scoped4.prefix).toBe('prefix_')
 
       // Options object with delimiter
