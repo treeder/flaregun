@@ -216,5 +216,13 @@ describe('flaregun KV Storage interface', () => {
       await wrappedKV.set('key', 'val')
       expect(mockBinding.store.get('app:sub:key')).toBe('val')
     })
+
+    it('does not append delimiter when prefix is empty or falsy', () => {
+      const mockBinding = createMockKVBinding()
+      const rootKV = new KV(mockBinding)
+      expect(rootKV.scope('').prefix).toBe('')
+      expect(rootKV.scope(null).prefix).toBe('')
+      expect(rootKV.scope(undefined).prefix).toBe('')
+    })
   })
 })

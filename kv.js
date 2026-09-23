@@ -32,7 +32,7 @@ export class KV {
     const opts = typeof options === 'string' ? { delimiter: options } : options
     const delimiter = opts.delimiter !== undefined ? opts.delimiter : this.delimiter
     let p = String(prefix || '')
-    if (delimiter && !p.endsWith(delimiter)) {
+    if (p && delimiter && !p.endsWith(delimiter)) {
       p += delimiter
     }
     const nextPrefix = this.prefix ? `${this.prefix}${p}` : p
