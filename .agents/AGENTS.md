@@ -55,6 +55,11 @@ A wrapper around the Cloudflare KV binding that simplifies reading and writing J
   - Store objects: `await kv.putJSON(key, { foo: 'bar' })`.
   - Retrieve objects: `const data = await kv.getJSON(key)`. (Automatically returns `null` or parsed JSON).
 - **Standard Operations**: Use `get`, `put`, `delete`, and `list` for standard string values.
+- **Web Storage API**: Implements `getItem`, `setItem`, `removeItem`, and `clear`.
+- **Scoped Storage**: Create isolated namespaces with ``const userKV = kv.scope(`user:${user.id}`)``.
+  - Prefixing is handled automatically on reads/writes.
+  - `list()` strips the scope prefix from returned key names.
+  - `clear()` deletes only keys within that scope, leaving the rest of KV untouched.
 
 ---
 

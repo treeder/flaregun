@@ -1,28 +1,68 @@
 export class KV {
   /**
    *
-   * @param {*} kv cloudflare KV binding
+   * @param {*} kv cloudflare KV binding or another KV instance
+   * @param {object} [options] options object
+   * @param {string} [options.prefix] prefix string to prepend to all keys
+   * @param {string} [options.delimiter] delimiter for scoping (default: ':')
    */
-  constructor(kv) {
-    this.kv = kv
+  constructor(kv, options = {}) {
+    if (kv instanceof KV) {
+      this.kv = kv.kv
+      this.delimiter = options.delimiter !== undefined ? options.delimiter : kv.delimiter
+      this.prefix = (kv.prefix || '') + (options.prefix || '')
+    } else {
+      this.kv = kv
+      this.prefix = options.prefix || ''
+      this.delimiter = options.delimiter !== undefined ? options.delimiter : ':'
+    }
+  }
+
+  /**
+   * Returns a new KV instance scoped with the given prefix.
+   *
+   * @param {string} prefix prefix string to scope by
+   * @param {object} [options] options object
+   * @param {string} [options.delimiter] delimiter for scoping (default: ':')
+   * @returns {KV}
+   */
+  scope(prefix, options = {}) {
+    const delimiter = options.delimiter !== undefined ? options.delimiter : this.delimiter
+    let p = String(prefix || '')
+    if (p && delimiter && !p.endsWith(delimiter)) {
+      p += delimiter
+    }
+    const nextPrefix = this.prefix ? `${this.prefix}${p}` : p
+    return new KV(this.kv, { prefix: nextPrefix, delimiter })
+  }
+
+  _key(key) {
+    return this.prefix ? `${this.prefix}${key}` : key
+  }
+
+  _unprefixKey(key) {
+    if (this.prefix && key.startsWith(this.prefix)) {
+      return key.slice(this.prefix.length)
+    }
+    return key
   }
 
   async putJSON(key, value, options = {}) {
-    return await this.kv.put(key, JSON.stringify(value), options)
+    return await this.put(key, JSON.stringify(value), options)
   }
 
   async getJSON(key, options = {}) {
-    let r = await this.kv.get(key, options)
+    let r = await this.get(key, options)
     if (r) r = JSON.parse(r)
     return r
   }
 
   async get(key, options = {}) {
-    return await this.kv.get(key, options)
+    return await this.kv.get(this._key(key), options)
   }
 
   async getWithMetadata(key, options = {}) {
-    return await this.kv.getWithMetadata(key, options)
+    return await this.kv.getWithMetadata(this._key(key), options)
   }
 
   /**
@@ -36,14 +76,29 @@ export class KV {
    * @returns
    */
   async put(key, value, options = {}) {
-    return await this.kv.put(key, value, options)
+    return await this.kv.put(this._key(key), value, options)
   }
+
   async delete(key) {
-    return await this.kv.delete(key)
+    return await this.kv.delete(this._key(key))
   }
 
   async list(options = {}) {
-    return await this.kv.list(options)
+    const listOptions = { ...options }
+    if (this.prefix) {
+      listOptions.prefix = `${this.prefix}${options.prefix || ''}`
+    }
+    const res = await this.kv.list(listOptions)
+    if (this.prefix && res && Array.isArray(res.keys)) {
+      return {
+        ...res,
+        keys: res.keys.map((k) => ({
+          ...k,
+          name: this._unprefixKey(k.name),
+        })),
+      }
+    }
+    return res
   }
 
   async set(key, value, options = {}) {

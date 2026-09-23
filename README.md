@@ -171,6 +171,31 @@ let list = await kv.list({ prefix: 'user:' })
 await kv.clear()
 ```
 
+### Scoped Storage (Namespacing)
+
+You can scope KV by a prefix to treat it as isolated, user-specific, or tenant-specific storage:
+
+```js
+// Create a scoped KV instance (delimiter ':' is automatically added if omitted)
+const userStorage = kv.scope(`user:${user.id}`)
+
+// Keys are automatically prefixed under the hood (e.g. 'user:123:theme')
+await userStorage.setItem('theme', 'dark')
+await userStorage.putJSON('settings', { beta: true })
+
+const theme = await userStorage.getItem('theme') // 'dark'
+
+// list() returns keys with the scope prefix stripped
+const { keys } = await userStorage.list() // [{ name: 'theme' }, { name: 'settings' }]
+
+// clear() safely deletes ONLY keys within this scope
+await userStorage.clear()
+
+// Chaining scopes is also supported:
+const tenantStorage = kv.scope('tenantA')
+const scopedUserStorage = tenantStorage.scope(`user:${user.id}`) // prefix: 'tenantA:user:123:'
+```
+
 ## Error Handler
 
 This is a special error handler that will format your error nicely formatted for Cloudflare logging and
