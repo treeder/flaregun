@@ -2,7 +2,6 @@ name: "🔎 Dazbo's Gemini Code Review"
 
 on:
   pull_request:
-    types: [opened]
     branches:
       - main
     # Optional: restrict trigger paths (supports inclusions & exclusions)
