@@ -7,10 +7,11 @@ const port = process.env.TEST_PORT || 8790
 
 export async function setup() {
   console.log(`🚀 Starting dev server on port ${port} in globalSetup...`)
-  serverProcess = spawn('npx', ['wrangler', 'dev', '--port', String(port)], {
+  serverProcess = spawn('npx', ['cf', 'dev', '--port', String(port)], {
     shell: true,
     stdio: 'inherit',
     detached: process.platform !== 'win32',
+    env: { ...process.env, CI: 'true' },
   })
 
   const start = Date.now()
