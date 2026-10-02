@@ -36,20 +36,60 @@ async function parseCloudflareConfig(c) {
   const prodConfig = typeof configFn === 'function' ? await configFn({ isPreview: false, mode: undefined }) : configFn
   const previewConfig = typeof configFn === 'function' ? await configFn({ isPreview: true, mode: undefined }) : null
 
+  let prodTarget
   if (prodConfig?.worker) {
     const workerName = prodConfig.worker.name
-    const target = extractResources(prodConfig.worker.env)
-    await processResources(c, target, workerName, 'production')
+    prodTarget = extractResources(prodConfig.worker.env)
+    await processResources(c, prodTarget, workerName, 'production')
   }
 
+  let previewTarget
   if (previewConfig?.worker) {
     const previewWorkerName =
-      previewConfig.worker.name || (prodConfig?.worker?.name ? `${prodConfig.worker.name}-preview` : 'preview')
-    const target = extractResources(previewConfig.worker.env)
-    await processResources(c, target, previewWorkerName, 'previews')
+      previewConfig.worker.name && previewConfig.worker.name !== prodConfig?.worker?.name
+        ? previewConfig.worker.name
+        : prodConfig?.worker?.name
+          ? `${prodConfig.worker.name}-preview`
+          : 'preview'
+    previewTarget = extractResources(previewConfig.worker.env)
+    await processResources(c, previewTarget, previewWorkerName, 'previews')
   }
 
+  printResourceSummary('production', prodTarget)
+  printResourceSummary('previews', previewTarget)
+
   console.log('Setup complete!')
+}
+
+function printResourceSummary(label, target) {
+  if (!target) return
+  const items = []
+  if (target.d1_databases) {
+    for (const d1 of target.d1_databases) {
+      items.push(`D1 [${d1.binding}]: name='${d1.database_name}', id='${d1.database_id}'`)
+    }
+  }
+  if (target.kv_namespaces) {
+    for (const kv of target.kv_namespaces) {
+      items.push(`KV [${kv.binding}]: id='${kv.id}'`)
+    }
+  }
+  if (target.r2_buckets) {
+    for (const r2 of target.r2_buckets) {
+      items.push(`R2 [${r2.binding}]: bucket='${r2.bucket_name}'`)
+    }
+  }
+  if (target.queues?.producers) {
+    for (const q of target.queues.producers) {
+      items.push(`Queue [${q.binding}]: queue='${q.queue}'`)
+    }
+  }
+  if (items.length > 0) {
+    console.log(`\nConfigured resource IDs for ${label} (ensure these match cloudflare.config.ts):`)
+    for (const item of items) {
+      console.log(`  • ${item}`)
+    }
+  }
 }
 
 function extractResources(env) {
