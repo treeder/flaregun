@@ -2,6 +2,8 @@ import 'dotenv/config'
 import { parseFile } from 'jsonc-parse'
 import { fetchCF } from './cfapi.js'
 import { writeFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
+import { pathToFileURL } from 'url'
 
 export async function setup(args) {
   let envFilter
@@ -20,7 +22,97 @@ export async function setup(args) {
   if (!c.env.CLOUDFLARE_ACCOUNT_ID || !c.env.CLOUDFLARE_API_TOKEN) {
     throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set in the environment')
   }
-  await parseWrangler(c)
+  if (existsSync('./cloudflare.config.ts')) {
+    await parseCloudflareConfig(c)
+  } else {
+    await parseWrangler(c)
+  }
+}
+
+async function parseCloudflareConfig(c) {
+  const configPath = resolve('./cloudflare.config.ts')
+  const configModule = await import(pathToFileURL(configPath).href)
+  const configFn = configModule.default
+  const prodConfig = typeof configFn === 'function' ? await configFn({ isPreview: false, mode: undefined }) : configFn
+  const previewConfig = typeof configFn === 'function' ? await configFn({ isPreview: true, mode: undefined }) : null
+
+  let prodTarget
+  if (prodConfig?.worker) {
+    const workerName = prodConfig.worker.name
+    prodTarget = extractResources(prodConfig.worker.env)
+    await processResources(c, prodTarget, workerName, 'production')
+  }
+
+  let previewTarget
+  if (previewConfig?.worker) {
+    const previewWorkerName =
+      previewConfig.worker.name && previewConfig.worker.name !== prodConfig?.worker?.name
+        ? previewConfig.worker.name
+        : prodConfig?.worker?.name
+          ? `${prodConfig.worker.name}-preview`
+          : 'preview'
+    previewTarget = extractResources(previewConfig.worker.env)
+    await processResources(c, previewTarget, previewWorkerName, 'previews')
+  }
+
+  printResourceSummary('production', prodTarget)
+  printResourceSummary('previews', previewTarget)
+
+  console.log('Setup complete!')
+}
+
+function printResourceSummary(label, target) {
+  if (!target) return
+  const items = []
+  if (target.d1_databases) {
+    for (const d1 of target.d1_databases) {
+      items.push(`D1 [${d1.binding}]: name='${d1.database_name}', id='${d1.database_id}'`)
+    }
+  }
+  if (target.kv_namespaces) {
+    for (const kv of target.kv_namespaces) {
+      items.push(`KV [${kv.binding}]: id='${kv.id}'`)
+    }
+  }
+  if (target.r2_buckets) {
+    for (const r2 of target.r2_buckets) {
+      items.push(`R2 [${r2.binding}]: bucket='${r2.bucket_name}'`)
+    }
+  }
+  if (target.queues?.producers) {
+    for (const q of target.queues.producers) {
+      items.push(`Queue [${q.binding}]: queue='${q.queue}'`)
+    }
+  }
+  if (items.length > 0) {
+    console.log(`\nConfigured resource IDs for ${label} (ensure these match cloudflare.config.ts):`)
+    for (const item of items) {
+      console.log(`  • ${item}`)
+    }
+  }
+}
+
+function extractResources(env) {
+  if (!env) return {}
+  const target = {}
+  for (const [binding, val] of Object.entries(env)) {
+    if (!val || typeof val !== 'object') continue
+    const type = val.type || val[Symbol.for('cf.binding_type')]
+    if (type === 'd1') {
+      target.d1_databases = target.d1_databases || []
+      target.d1_databases.push({ binding, database_name: val.name, database_id: val.id })
+    } else if (type === 'kv') {
+      target.kv_namespaces = target.kv_namespaces || []
+      target.kv_namespaces.push({ binding, id: val.id })
+    } else if (type === 'r2') {
+      target.r2_buckets = target.r2_buckets || []
+      target.r2_buckets.push({ binding, bucket_name: val.name })
+    } else if (type === 'queue') {
+      target.queues = target.queues || { producers: [] }
+      target.queues.producers.push({ binding, queue: val.name })
+    }
+  }
+  return target
 }
 
 async function parseWrangler(c) {

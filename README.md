@@ -299,7 +299,7 @@ logger.log('This is a message')
 
 ## Middleware
 
-If you're using Wrangler file based routing, you can add our middleware.
+If you're using file based routing, you can add our middleware.
 
 Add this to your root `_middleware.js`:
 

@@ -1,6 +1,8 @@
 node_modules/
 .wrangler/
+.cloudflare/
 .vscode/
 .env
 .dev.vars
 dist/
+worker-configuration.d.ts

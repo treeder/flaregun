@@ -5,14 +5,14 @@
   "description": "JavaScript utils for Cloudflare Workers.",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && npx -y wrangler dev --live-reload",
+    "start": "npm install && cf dev",
     "build": "npx -y treeder/flaregun build",
-    "run": "npx -y wrangler dev",
+    "run": "cf dev",
     "test:run": "vitest run",
     "test": "vitest run",
     "setup": "npx -y treeder/flaregun setup",
-    "deploy": "npx -y wrangler deploy",
-    "preview": "npx -y wrangler preview"
+    "deploy": "cf deploy",
+    "preview": "cf previews deploy"
   },
   "bin": "./bin/flaregun.js",
   "files": [
@@ -46,6 +46,7 @@
     "nanoid": "^6.0.1"
   },
   "devDependencies": {
+    "cf": "^1.0.0-beta.12",
     "migrations": "github:treeder/migrations#semver:^3",
     "once": "github:treeder/once#semver:^1",
     "prettier": "^3.9.8",
