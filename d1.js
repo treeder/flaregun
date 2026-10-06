@@ -797,6 +797,9 @@ export function pluralize(str) {
   if (str.endsWith('y') && !/[aeiou]y$/i.test(str)) {
     return str.slice(0, -1) + 'ies'
   }
+  if (str.endsWith('s')) {
+    return str + 'es'
+  }
   return str + 's'
 }
 
@@ -804,6 +807,12 @@ export function singular(str) {
   if (!str || typeof str !== 'string') return ''
   if (str.endsWith('ies')) {
     return str.slice(0, -3) + 'y'
+  }
+  if (str.endsWith('sses')) {
+    return str.slice(0, -2)
+  }
+  if (str.endsWith('ss')) {
+    return str
   }
   if (str.endsWith('s')) {
     return str.slice(0, -1)

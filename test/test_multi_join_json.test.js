@@ -288,12 +288,18 @@ test('toCamelCase, singular, and pluralize guard against non-string and falsy in
   expect(singular(123)).toBe('')
   expect(singular('threads')).toBe('thread')
   expect(singular('categories')).toBe('category')
+  expect(singular('processes')).toBe('process')
+  expect(singular('process')).toBe('process')
+  expect(singular('addresses')).toBe('address')
+  expect(singular('address')).toBe('address')
 
   expect(pluralize(undefined)).toBe('')
   expect(pluralize(null)).toBe('')
   expect(pluralize(123)).toBe('')
   expect(pluralize('thread')).toBe('threads')
   expect(pluralize('category')).toBe('categories')
+  expect(pluralize('process')).toBe('processes')
+  expect(pluralize('address')).toBe('addresses')
 })
 
 test('D1.prepStmt infers ON clause and aliases when models are defined as schema objects without .name', () => {
