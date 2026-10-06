@@ -1,7 +1,9 @@
 import 'dotenv/config'
 import { parseFile } from 'jsonc-parse'
 import { fetchCF } from './cfapi.js'
-import { writeFileSync } from 'fs'
+import { writeFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
+import { pathToFileURL } from 'url'
 
 export async function setup(args) {
   let envFilter
@@ -20,64 +22,192 @@ export async function setup(args) {
   if (!c.env.CLOUDFLARE_ACCOUNT_ID || !c.env.CLOUDFLARE_API_TOKEN) {
     throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set in the environment')
   }
-  await parseWrangler(c)
+  if (existsSync('./cloudflare.config.ts')) {
+    await parseCloudflareConfig(c)
+  } else {
+    await parseWrangler(c)
+  }
 }
 
-async function parseWrangler(c) {
-  const wranglerConfig = await parseFile('./wrangler.jsonc')
-  // console.log(wranglerConfig)
+async function parseCloudflareConfig(c) {
+  const configPath = resolve('./cloudflare.config.ts')
+  const configModule = await import(pathToFileURL(configPath).href)
+  const configFn = configModule.default
+  const prodConfig = typeof configFn === 'function' ? await configFn({ isPreview: false, mode: undefined }) : configFn
+  const previewConfig = typeof configFn === 'function' ? await configFn({ isPreview: true, mode: undefined }) : null
 
-  for (let env in wranglerConfig.env) {
-    if (c.envFilter && env !== c.envFilter) {
-      continue
-    }
-    console.log(`Creating resources for environment: ${env}`)
-    let prod = wranglerConfig.env[env]
-    // let prod = wranglerConfig.env.prod
-    // console.log(prod)
-    for (let kv of prod.kv_namespaces) {
-      console.log(kv)
-      await createKV(c, kv)
-    }
-    for (let d1 of prod.d1_databases) {
-      console.log(d1)
-      await createDB(c, d1)
-    }
-    for (let r2 of prod.r2_buckets) {
-      console.log(r2)
-      await createR2(c, r2)
-    }
-    if (prod.queues) {
-      for (let q of prod.queues.producers) {
-        console.log(q)
-        await createQueue(c, q)
-      }
-    }
+  let prodTarget
+  if (prodConfig?.worker) {
+    const workerName = prodConfig.worker.name
+    prodTarget = extractResources(prodConfig.worker.env)
+    await processResources(c, prodTarget, workerName, 'production')
   }
-  writeFileSync('./wrangler.jsonc', JSON.stringify(wranglerConfig, null, 2))
+
+  let previewTarget
+  if (previewConfig?.worker) {
+    const previewWorkerName =
+      previewConfig.worker.name && previewConfig.worker.name !== prodConfig?.worker?.name
+        ? previewConfig.worker.name
+        : prodConfig?.worker?.name
+          ? `${prodConfig.worker.name}-preview`
+          : 'preview'
+    previewTarget = extractResources(previewConfig.worker.env)
+    await processResources(c, previewTarget, previewWorkerName, 'previews')
+  }
+
+  printResourceSummary('production', prodTarget)
+  printResourceSummary('previews', previewTarget)
 
   console.log('Setup complete!')
 }
 
-async function createDB(c, d1) {
+function printResourceSummary(label, target) {
+  if (!target) return
+  const items = []
+  if (target.d1_databases) {
+    for (const d1 of target.d1_databases) {
+      items.push(`D1 [${d1.binding}]: name='${d1.database_name}', id='${d1.database_id}'`)
+    }
+  }
+  if (target.kv_namespaces) {
+    for (const kv of target.kv_namespaces) {
+      items.push(`KV [${kv.binding}]: id='${kv.id}'`)
+    }
+  }
+  if (target.r2_buckets) {
+    for (const r2 of target.r2_buckets) {
+      items.push(`R2 [${r2.binding}]: bucket='${r2.bucket_name}'`)
+    }
+  }
+  if (target.queues?.producers) {
+    for (const q of target.queues.producers) {
+      items.push(`Queue [${q.binding}]: queue='${q.queue}'`)
+    }
+  }
+  if (items.length > 0) {
+    console.log(`\nConfigured resource IDs for ${label} (ensure these match cloudflare.config.ts):`)
+    for (const item of items) {
+      console.log(`  • ${item}`)
+    }
+  }
+}
+
+function extractResources(env) {
+  if (!env) return {}
+  const target = {}
+  for (const [binding, val] of Object.entries(env)) {
+    if (!val || typeof val !== 'object') continue
+    const type = val.type || val[Symbol.for('cf.binding_type')]
+    if (type === 'd1') {
+      target.d1_databases = target.d1_databases || []
+      target.d1_databases.push({ binding, database_name: val.name, database_id: val.id })
+    } else if (type === 'kv') {
+      target.kv_namespaces = target.kv_namespaces || []
+      target.kv_namespaces.push({ binding, id: val.id })
+    } else if (type === 'r2') {
+      target.r2_buckets = target.r2_buckets || []
+      target.r2_buckets.push({ binding, bucket_name: val.name })
+    } else if (type === 'queue') {
+      target.queues = target.queues || { producers: [] }
+      target.queues.producers.push({ binding, queue: val.name })
+    }
+  }
+  return target
+}
+
+async function parseWrangler(c) {
+  const configFile = existsSync('./wrangler.jsonc')
+    ? './wrangler.jsonc'
+    : existsSync('./wrangler.json')
+      ? './wrangler.json'
+      : './wrangler.jsonc'
+  const wranglerConfig = await parseFile(configFile)
+  // console.log(wranglerConfig)
+
+  // Top-level production resources
+  if (
+    wranglerConfig.kv_namespaces ||
+    wranglerConfig.d1_databases ||
+    wranglerConfig.r2_buckets ||
+    wranglerConfig.queues
+  ) {
+    await processResources(c, wranglerConfig, wranglerConfig.name, 'production')
+  }
+
+  // Previews resources
+  if (wranglerConfig.previews) {
+    const previewWorkerName =
+      wranglerConfig.previews.name || (wranglerConfig.name ? `${wranglerConfig.name}-preview` : 'preview')
+    await processResources(c, wranglerConfig.previews, previewWorkerName, 'previews')
+  }
+
+  // Backwards compatibility for legacy environments
+  if (wranglerConfig.env) {
+    for (let env in wranglerConfig.env) {
+      if (c.envFilter && env !== c.envFilter) {
+        continue
+      }
+      let prod = wranglerConfig.env[env]
+      let workerName = prod.name || wranglerConfig.name
+      await processResources(c, prod, workerName, `environment: ${env}`)
+    }
+  }
+
+  writeFileSync(configFile, JSON.stringify(wranglerConfig, null, 2))
+
+  console.log('Setup complete!')
+}
+
+async function processResources(c, target, workerName, label) {
+  if (!target) return
+  console.log(`Creating resources for ${label}`)
+  if (target.kv_namespaces) {
+    for (let kv of target.kv_namespaces) {
+      console.log(kv)
+      await createKV(c, kv, workerName)
+    }
+  }
+  if (target.d1_databases) {
+    for (let d1 of target.d1_databases) {
+      console.log(d1)
+      await createDB(c, d1, workerName)
+    }
+  }
+  if (target.r2_buckets) {
+    for (let r2 of target.r2_buckets) {
+      console.log(r2)
+      await createR2(c, r2, workerName)
+    }
+  }
+  if (target.queues?.producers) {
+    for (let q of target.queues.producers) {
+      console.log(q)
+      await createQueue(c, q, workerName)
+    }
+  }
+}
+
+async function createDB(c, d1, workerName) {
   // if (d1.database_id) {
   //   return
   // }
+  const dbName = d1.database_name || workerName
+  d1.database_name = dbName
   // check if exists first
   let r = await fetchCF(c, '/d1/database', {
-    q: { name: d1.database_name },
+    q: { name: dbName },
   })
   console.log(r)
   if (r.result.length > 0) {
-    console.log(`Database ${d1.database_name} already exists with id ${r.result[0].uuid}`)
+    console.log(`Database ${dbName} already exists with id ${r.result[0].uuid}`)
     d1.database_id = r.result[0].uuid
     return
   }
-  console.log(`Creating database ${d1.database_name}`)
+  console.log(`Creating database ${dbName}`)
   r = await fetchCF(c, '/d1/database', {
     method: 'POST',
     body: {
-      name: d1.database_name,
+      name: dbName,
       // primary_location_hint: "wnam"
     },
   })
@@ -85,27 +215,34 @@ async function createDB(c, d1) {
   d1.database_id = r.result.uuid
 }
 
-async function createKV(c, kv) {
+async function createKV(c, kv, workerName) {
+  const bindingName = kv.binding || 'kv'
+  const normalisedBinding = bindingName.toLowerCase().replaceAll('_', '-')
+  const autoName = workerName ? `${workerName}-${normalisedBinding}` : normalisedBinding
+  const title = kv.title || autoName
   // if (kv.id) {
   //   return
   // }
   // check if exists first
   let r = await fetchCF(c, '/storage/kv/namespaces', {
-    q: { title: kv.title },
+    q: { title },
   })
   console.log(r)
   for (let kstore of r.result) {
-    if (kstore.title === kv.title) {
-      console.log(`KV store with title ${kv.title} already exists with id ${kstore.id}`)
+    if (
+      kstore.title === title ||
+      (workerName && (kstore.title === `${workerName}-${bindingName}` || kstore.title === workerName))
+    ) {
+      console.log(`KV store with title ${kstore.title} already exists with id ${kstore.id}`)
       kv.id = kstore.id
       return
     }
   }
-  console.log(`Creating KV store ${kv.title}`)
+  console.log(`Creating KV store ${title}`)
   r = await fetchCF(c, '/storage/kv/namespaces', {
     method: 'POST',
     body: {
-      title: kv.title,
+      title,
       // primary_location_hint: "wnam"
     },
   })
@@ -113,11 +250,13 @@ async function createKV(c, kv) {
   kv.id = r.result.id
 }
 
-async function createR2(c, r2) {
+async function createR2(c, r2, workerName) {
+  const bucketName = r2.bucket_name || workerName
+  r2.bucket_name = bucketName
   try {
-    let r = await fetchCF(c, `/r2/buckets/${r2.bucket_name}`, {})
+    let r = await fetchCF(c, `/r2/buckets/${bucketName}`, {})
     console.log(r)
-    console.log(`R2 bucket ${r2.bucket_name} already exists`)
+    console.log(`R2 bucket ${bucketName} already exists`)
     return
   } catch (e) {
     console.error(e, e.data)
@@ -130,24 +269,26 @@ async function createR2(c, r2) {
       }
     }
   }
-  console.log(`Creating R2 bucket ${r2.bucket_name}`)
+  console.log(`Creating R2 bucket ${bucketName}`)
   let r = await fetchCF(c, '/r2/buckets', {
     method: 'POST',
     body: {
-      name: r2.bucket_name,
+      name: bucketName,
       // primary_location_hint: "wnam"
     },
   })
   console.log(r)
 }
 
-async function createQueue(c, r2) {
-  console.log(`Creating queue ${r2.queue}`)
+async function createQueue(c, r2, workerName) {
+  const queueName = r2.queue || workerName
+  r2.queue = queueName
+  console.log(`Creating queue ${queueName}`)
   try {
     let r = await fetchCF(c, '/queues', {
       method: 'POST',
       body: {
-        queue_name: r2.queue,
+        queue_name: queueName,
         // primary_location_hint: "wnam"
       },
     })

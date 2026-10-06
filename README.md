@@ -141,12 +141,59 @@ This will parse the dates, booleans, JSON, etc into the proper types.
 
 ## KV
 
-This is a simple wrapper that adds a few nice things like:
+A wrapper around Cloudflare's KV binding that implements the standard JavaScript [Storage interface](https://developer.mozilla.org/en-US/docs/Web/API/Storage) (`getItem`, `setItem`, `removeItem`, `clear`), making it easy to swap with browser storage or standard storage providers:
 
-```
+```js
+import { KV } from 'flaregun'
+
 let kv = new KV(env.KV)
-await kv.putJSON('foo', { bar: 'baz' })
-let foo = await kv.getJSON('foo')
+
+// Standard Storage interface methods
+await kv.setItem('foo', 'bar')
+let foo = await kv.getItem('foo') // 'bar'
+await kv.removeItem('foo')
+
+// setItem and set automatically handle string coercion and object serialization
+await kv.setItem('isEnabled', true)
+await kv.setItem('config', { theme: 'dark' })
+
+// JSON convenience helpers
+await kv.putJSON('user', { name: 'Jimbo', role: 'admin' })
+let user = await kv.getJSON('user')
+
+// Native Cloudflare KV methods (get, put, delete, list) and options are fully supported
+await kv.put('key', 'value', { expirationTtl: 3600 })
+let val = await kv.get('key')
+await kv.delete('key')
+let list = await kv.list({ prefix: 'user:' })
+
+// Clear all keys
+await kv.clear()
+```
+
+### Scoped Storage (Namespacing)
+
+You can scope KV by a prefix to treat it as isolated, user-specific, or tenant-specific storage:
+
+```js
+// Create a scoped KV instance (delimiter ':' is automatically added if omitted)
+const userStorage = kv.scope(`user:${user.id}`)
+
+// Keys are automatically prefixed under the hood (e.g. 'user:123:theme')
+await userStorage.setItem('theme', 'dark')
+await userStorage.putJSON('settings', { beta: true })
+
+const theme = await userStorage.getItem('theme') // 'dark'
+
+// list() returns keys with the scope prefix stripped
+const { keys } = await userStorage.list() // [{ name: 'theme' }, { name: 'settings' }]
+
+// clear() safely deletes ONLY keys within this scope
+await userStorage.clear()
+
+// Chaining scopes is also supported:
+const tenantStorage = kv.scope('tenantA')
+const scopedUserStorage = tenantStorage.scope(`user:${user.id}`) // prefix: 'tenantA:user:123:'
 ```
 
 ## Error Handler
@@ -252,7 +299,7 @@ logger.log('This is a message')
 
 ## Middleware
 
-If you're using Wrangler file based routing, you can add our middleware.
+If you're using file based routing, you can add our middleware.
 
 Add this to your root `_middleware.js`:
 

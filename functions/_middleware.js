@@ -1,4 +1,4 @@
-import { ClassMigrations } from 'migrations'
+import { Migrations } from 'migrations'
 import { User } from './data/users.js'
 import { Post } from './data/posts.js'
 import { D1 } from '../d1.js'
@@ -47,8 +47,8 @@ export async function wrap(c) {
 async function init(c) {
   console.log('ONE')
 
-  let migrations = new ClassMigrations(c.data.d1, [User, Post])
-  await migrations.run(c.data.d1)
+  let migrations = new Migrations(c.data.d1, [User, Post])
+  await migrations.run()
 }
 
 export const onRequest = [timer, cors, wrap]
