@@ -273,14 +273,11 @@ export class D1 {
                   // ignore
                 }
               }
-              for (let prop in item) {
-                let propVal = item[prop]
-                if (typeof propVal === 'string' && (propVal.startsWith('{') || propVal.startsWith('['))) {
-                  try {
-                    item[prop] = JSON.parse(propVal)
-                  } catch (e) {
-                    // ignore
-                  }
+              if (typeof item.data === 'string' && (item.data.startsWith('{') || item.data.startsWith('['))) {
+                try {
+                  item.data = JSON.parse(item.data)
+                } catch (e) {
+                  // ignore
                 }
               }
             }

@@ -409,3 +409,36 @@ test('D1.parseResults handles schema objects without .name', () => {
   expect(typeof mockResults[0].user.data).toBe('object')
   expect(mockResults[0].user.data.role).toBe('admin')
 })
+
+test('D1.parseResults preserves properties typed as String even if they start with { or [', () => {
+  const d1 = new D1({})
+
+  class Article {
+    static table = 'articles'
+    static properties = {
+      id: { type: String, primaryKey: true },
+      data: { type: Object },
+      rawJson: { type: String },
+      markdownList: { type: String },
+    }
+  }
+
+  const mockResults = [
+    {
+      article: JSON.stringify({
+        id: 'a1',
+        data: JSON.stringify({ key: 'value' }),
+        rawJson: '{"doNotParse": true}',
+        markdownList: '["item1", "item2"]',
+      }),
+    },
+  ]
+
+  d1.parseResults(Article, { join: [] }, mockResults)
+  expect(typeof mockResults[0].article.data).toBe('object')
+  expect(mockResults[0].article.data.key).toBe('value')
+  expect(typeof mockResults[0].article.rawJson).toBe('string')
+  expect(mockResults[0].article.rawJson).toBe('{"doNotParse": true}')
+  expect(typeof mockResults[0].article.markdownList).toBe('string')
+  expect(mockResults[0].article.markdownList).toBe('["item1", "item2"]')
+})
