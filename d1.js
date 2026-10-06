@@ -118,40 +118,7 @@ export class D1 {
       return await st.all()
     })
     // console.log("QUERY:", r)
-    if (q.model || q.join) {
-      // then we need to do some parsing
-      for (let r2 of r.results) {
-        // If we are using the join trick, we don't want to parse the model on the row itself
-        // unless the row itself is the model. But if it has nested objects, we should parse them?
-        // For now, let's keep it as is, but we might need to change if 'r2' is a new object structure.
-        if (q.join && !q.columns) {
-          // We generated json_object columns. We need to parse them.
-          // They are strings.
-          let i = 0
-          for (let k in r2) {
-            if (typeof r2[k] === 'string' && (r2[k].startsWith('{') || r2[k].startsWith('['))) {
-              try {
-                r2[k] = JSON.parse(r2[k])
-                if (i == 0) {
-                  if (q.model) {
-                    parseModel(r2[k], q.model, { parseJSON: true })
-                  }
-                } else if (i == 1) {
-                  // todo: should allow more than a single join
-                  if (q.join.model) {
-                    parseModel(r2[k], q.model, { parseJSON: true })
-                  }
-                }
-              } catch (e) {
-                // ignore
-              }
-            }
-          }
-        } else {
-          parseModel(r2, q.model, { parseJSON: true })
-        }
-      }
-    }
+    this.parseResults(table, q, r.results)
     return r.results
   }
 
@@ -180,8 +147,161 @@ export class D1 {
       return await st.first()
     })
     // console.log("FIRST:", r)
-    parseModel(r, q.model, { parseJSON: true })
+    if (r) {
+      this.parseResults(table, q, [r])
+    }
     return r
+  }
+
+  normalizeJoin(j) {
+    if (!j) return null
+    if (typeof j === 'function' || (typeof j === 'object' && j.properties && !j.on)) {
+      return { table: j, model: j }
+    }
+    if (typeof j === 'object') {
+      let copy = { ...j }
+      if (!copy.table && copy.model) {
+        copy.table = copy.model
+      }
+      return copy
+    }
+    return j
+  }
+
+  inferOnClause(mainTableOrModel, j) {
+    let mainModel = typeof mainTableOrModel !== 'string' && mainTableOrModel?.properties ? mainTableOrModel : null
+    let joinModel = j.model || (typeof j.table !== 'string' && j.table?.properties ? j.table : null)
+    let mainTable = this.tableName(mainTableOrModel)
+    let joinTable = this.tableName(j.table)
+
+    if (mainModel && joinModel) {
+      let mainPk = Object.keys(mainModel.properties).find((k) => mainModel.properties[k].primaryKey) || 'id'
+      let joinPk = Object.keys(joinModel.properties).find((k) => joinModel.properties[k].primaryKey) || 'id'
+
+      // Check if joinModel has a reference to mainModel
+      let mainName = mainModel.name ? toCamelCase(mainModel.name) : singular(mainTable)
+      let candidateFksJoin = [
+        `${mainName}Id`,
+        `${singular(mainTable)}Id`,
+        `${singular(mainTable)}_id`,
+        `${mainName}_id`,
+      ]
+      for (let fk of candidateFksJoin) {
+        if (joinModel.properties[fk]) {
+          return `${joinTable}.${fk} = ${mainTable}.${mainPk}`
+        }
+      }
+
+      // Check if mainModel has a reference to joinModel
+      let joinName = joinModel.name ? toCamelCase(joinModel.name) : singular(joinTable)
+      let candidateFksMain = [
+        `${joinName}Id`,
+        `${singular(joinTable)}Id`,
+        `${singular(joinTable)}_id`,
+        `${joinName}_id`,
+      ]
+      for (let fk of candidateFksMain) {
+        if (mainModel.properties[fk]) {
+          return `${mainTable}.${fk} = ${joinTable}.${joinPk}`
+        }
+      }
+    }
+
+    throw new Error(`Cannot infer ON clause for join on '${joinTable}'. Please specify 'on' condition.`)
+  }
+
+  parseResults(table, q, results) {
+    if (!results || results.length === 0) return
+    if (!q.model && !q.join) return
+
+    if (q.join && !q.columns) {
+      const modelMap = new Map()
+
+      let mainModel = q.model || (typeof table !== 'string' && table?.properties ? table : null)
+      let mainAlias = mainModel
+        ? mainModel.name
+          ? toCamelCase(mainModel.name)
+          : toCamelCase(singular(this.tableName(table)))
+        : null
+      if (mainModel && mainAlias) {
+        modelMap.set(mainAlias, mainModel)
+      }
+
+      let joins = []
+      if (Array.isArray(q.join)) {
+        joins = q.join.map((j) => this.normalizeJoin(j)).filter(Boolean)
+      } else if (typeof q.join === 'object' || typeof q.join === 'function') {
+        let norm = this.normalizeJoin(q.join)
+        if (norm) joins = [norm]
+      }
+
+      for (let j of joins) {
+        if (!j) continue
+        let joinModel = j.model || (typeof j.table !== 'string' && j.table?.properties ? j.table : null)
+        if (joinModel) {
+          let alias =
+            j.as ||
+            j.alias ||
+            (joinModel.name ? toCamelCase(joinModel.name) : toCamelCase(singular(this.tableName(j.table))))
+          modelMap.set(alias, joinModel)
+        }
+      }
+
+      for (let r2 of results) {
+        for (let k in r2) {
+          let val = r2[k]
+          if (val === null || val === undefined) {
+            continue
+          }
+          if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+            try {
+              val = JSON.parse(val)
+              r2[k] = val
+            } catch (e) {
+              // ignore
+            }
+          }
+          if (typeof r2[k] === 'object' && r2[k] !== null) {
+            let model = modelMap.get(k)
+            let items = Array.isArray(r2[k]) ? r2[k] : [r2[k]]
+            for (let item of items) {
+              if (typeof item !== 'object' || item === null) continue
+              if (model) {
+                try {
+                  parseModel(item, model, { parseJSON: true })
+                } catch (e) {
+                  // ignore
+                }
+              }
+              if (typeof item.data === 'string' && (item.data.startsWith('{') || item.data.startsWith('['))) {
+                try {
+                  item.data = JSON.parse(item.data)
+                } catch (e) {
+                  // ignore
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (let r2 of results) {
+        if (q.model) {
+          try {
+            parseModel(r2, q.model, { parseJSON: true })
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (typeof r2.data === 'string' && (r2.data.startsWith('{') || r2.data.startsWith('['))) {
+          try {
+            r2.data = JSON.parse(r2.data)
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+    }
   }
 
   prepStmt(table, q = {}) {
@@ -192,9 +312,10 @@ export class D1 {
 
     if (q.join) {
       if (Array.isArray(q.join)) {
-        joins = q.join
-      } else if (typeof q.join === 'object') {
-        joins = [q.join]
+        joins = q.join.map((j) => this.normalizeJoin(j)).filter(Boolean)
+      } else if (typeof q.join === 'object' || typeof q.join === 'function') {
+        let norm = this.normalizeJoin(q.join)
+        if (norm) joins = [norm]
       } else if (typeof q.join === 'string') {
         // string join, ignore for object processing
       }
@@ -206,19 +327,24 @@ export class D1 {
       }
     }
 
+    let mainModel = q.model || (typeof table !== 'string' && table?.properties ? table : null)
     let cols = '*'
     if (q.columns) {
       cols = q.columns.join(', ')
     } else if (q.join) {
       // if columns are not specified, and we have a join, let's do the json_object trick
       let newCols = []
-      if (typeof table !== 'string' && table.properties) {
-        newCols.push(this.jsonObjectCol(table))
+      if (mainModel && mainModel.properties) {
+        let mainAlias = mainModel.name ? toCamelCase(mainModel.name) : toCamelCase(singular(mainTableName))
+        newCols.push(this.jsonObjectCol(mainModel, mainAlias))
       }
 
       for (const j of joins) {
-        if (typeof j.table !== 'string' && j.table.properties) {
-          newCols.push(this.jsonObjectCol(j.table))
+        let model = j.model || (typeof j.table !== 'string' && j.table?.properties ? j.table : null)
+        if (model) {
+          let alias =
+            j.as || j.alias || (model.name ? toCamelCase(model.name) : toCamelCase(singular(this.tableName(j.table))))
+          newCols.push(this.jsonObjectCol(model, alias))
         }
       }
       if (newCols.length > 0) {
@@ -236,6 +362,8 @@ export class D1 {
             let op = j.on[1]
             let right = this.processCol(j.on[2], knownTables, this.tableName(j.table))
             onClause = `${left} ${op} ${right}`
+          } else if (!onClause) {
+            onClause = this.inferOnClause(mainModel || table, j)
           }
           s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${onClause}`
         }
@@ -640,10 +768,10 @@ export class D1 {
     return { str: '?', numValues: 1 }
   }
 
-  jsonObjectCol(model) {
+  jsonObjectCol(model, aliasOverride) {
     let tableName = this.tableName(model)
     // alias?
-    let alias = toCamelCase(model.name)
+    let alias = aliasOverride || (model.name ? toCamelCase(model.name) : toCamelCase(singular(tableName)))
     let fields = Object.keys(model.properties)
     let args = fields.map((f) => `'${f}', ${tableName}.${f}`).join(', ')
     // we need to check if the record exists, if not, return null
@@ -659,10 +787,35 @@ export function toTableName(str) {
   return pluralize(toCamelCase(str))
 }
 
-function toCamelCase(str) {
+export function toCamelCase(str) {
+  if (!str || typeof str !== 'string') return ''
   return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
-function pluralize(str) {
+export function pluralize(str) {
+  if (!str || typeof str !== 'string') return ''
+  if (str.endsWith('y') && !/[aeiou]y$/i.test(str)) {
+    return str.slice(0, -1) + 'ies'
+  }
+  if (str.endsWith('s')) {
+    return str + 'es'
+  }
   return str + 's'
+}
+
+export function singular(str) {
+  if (!str || typeof str !== 'string') return ''
+  if (str.endsWith('ies')) {
+    return str.slice(0, -3) + 'y'
+  }
+  if (str.endsWith('sses')) {
+    return str.slice(0, -2)
+  }
+  if (str.endsWith('ss')) {
+    return str
+  }
+  if (str.endsWith('s')) {
+    return str.slice(0, -1)
+  }
+  return str
 }
