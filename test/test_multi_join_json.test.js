@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { D1 } from '../d1.js'
+import { D1, toCamelCase, singular, pluralize } from '../d1.js'
 import { c } from './helper.js'
 
 test('D1.parseResults handles multi-table joins and parses nested model and JSON properties', () => {
@@ -274,4 +274,138 @@ test('End-to-end: multi-table join parses nested JSON fields from SQLite', async
   expect(match.user.data.role).toBe('creator')
   expect(match.user.data.tier).toBe(3)
   expect(match.user.data.preferences.newsletter).toBe(true)
+})
+
+test('toCamelCase, singular, and pluralize guard against non-string and falsy inputs', () => {
+  expect(toCamelCase(undefined)).toBe('')
+  expect(toCamelCase(null)).toBe('')
+  expect(toCamelCase('')).toBe('')
+  expect(toCamelCase(123)).toBe('')
+  expect(toCamelCase('ThreadUser')).toBe('threadUser')
+
+  expect(singular(undefined)).toBe('')
+  expect(singular(null)).toBe('')
+  expect(singular(123)).toBe('')
+  expect(singular('threads')).toBe('thread')
+  expect(singular('categories')).toBe('category')
+
+  expect(pluralize(undefined)).toBe('')
+  expect(pluralize(null)).toBe('')
+  expect(pluralize(123)).toBe('')
+  expect(pluralize('thread')).toBe('threads')
+  expect(pluralize('category')).toBe('categories')
+})
+
+test('D1.prepStmt infers ON clause and aliases when models are defined as schema objects without .name', () => {
+  let executedSql = ''
+  const mockDb = {
+    prepare(sql) {
+      executedSql = sql
+      return {
+        bind() {
+          return this
+        },
+      }
+    },
+  }
+  const d1 = new D1(mockDb)
+
+  const threadSchema = {
+    table: 'threads',
+    properties: {
+      id: { type: String, primaryKey: true },
+      data: { type: Object },
+    },
+  }
+
+  const threadUserSchema = {
+    table: 'threadUsers',
+    properties: {
+      id: { type: String, primaryKey: true },
+      threadId: { type: String },
+      data: { type: Object },
+    },
+  }
+
+  d1.prepStmt(threadSchema, { join: [threadUserSchema] })
+  expect(executedSql).toContain('SELECT CASE WHEN threads.id IS NULL THEN NULL ELSE json_object')
+  expect(executedSql).toContain('as "thread"')
+  expect(executedSql).toContain('CASE WHEN threadUsers.id IS NULL THEN NULL ELSE json_object')
+  expect(executedSql).toContain('as "threadUser"')
+  expect(executedSql).toContain('INNER JOIN threadUsers ON threadUsers.threadId = threads.id')
+})
+
+test('D1.prepStmt infers ON clause when table is string and model is provided in q', () => {
+  let executedSql = ''
+  const mockDb = {
+    prepare(sql) {
+      executedSql = sql
+      return {
+        bind() {
+          return this
+        },
+      }
+    },
+  }
+  const d1 = new D1(mockDb)
+
+  class Thread {
+    static table = 'threads'
+    static properties = {
+      id: { type: String, primaryKey: true },
+      data: { type: Object },
+    }
+  }
+
+  class ThreadUser {
+    static table = 'threadUsers'
+    static properties = {
+      id: { type: String, primaryKey: true },
+      threadId: { type: String },
+      data: { type: Object },
+    }
+  }
+
+  d1.prepStmt('threads', { model: Thread, join: [ThreadUser] })
+  expect(executedSql).toContain('SELECT CASE WHEN threads.id IS NULL THEN NULL ELSE json_object')
+  expect(executedSql).toContain('as "thread"')
+  expect(executedSql).toContain('INNER JOIN threadUsers ON threadUsers.threadId = threads.id')
+})
+
+test('D1.parseResults handles schema objects without .name', () => {
+  const d1 = new D1({})
+
+  const userSchema = {
+    table: 'users',
+    properties: {
+      id: { type: String, primaryKey: true },
+      name: { type: String },
+      data: { type: Object },
+    },
+  }
+
+  const postSchema = {
+    table: 'posts',
+    properties: {
+      id: { type: String, primaryKey: true },
+      userId: { type: String },
+      data: { type: Object },
+    },
+  }
+
+  const mockResults = [
+    {
+      post: JSON.stringify({ id: 'p1', userId: 'u1', data: JSON.stringify({ views: 10 }) }),
+      user: JSON.stringify({ id: 'u1', name: 'Schema User', data: JSON.stringify({ role: 'admin' }) }),
+    },
+  ]
+
+  d1.parseResults(postSchema, { join: [userSchema] }, mockResults)
+  expect(typeof mockResults[0].post).toBe('object')
+  expect(typeof mockResults[0].post.data).toBe('object')
+  expect(mockResults[0].post.data.views).toBe(10)
+  expect(typeof mockResults[0].user).toBe('object')
+  expect(mockResults[0].user.name).toBe('Schema User')
+  expect(typeof mockResults[0].user.data).toBe('object')
+  expect(mockResults[0].user.data.role).toBe('admin')
 })

@@ -155,8 +155,8 @@ export class D1 {
 
   normalizeJoin(j) {
     if (!j) return null
-    if (typeof j === 'function' || (typeof j === 'object' && j.properties && !j.table && !j.model)) {
-      return { table: j }
+    if (typeof j === 'function' || (typeof j === 'object' && j.properties && !j.on)) {
+      return { table: j, model: j }
     }
     if (typeof j === 'object') {
       let copy = { ...j }
@@ -179,11 +179,12 @@ export class D1 {
       let joinPk = Object.keys(joinModel.properties).find((k) => joinModel.properties[k].primaryKey) || 'id'
 
       // Check if joinModel has a reference to mainModel
+      let mainName = mainModel.name ? toCamelCase(mainModel.name) : singular(mainTable)
       let candidateFksJoin = [
-        `${toCamelCase(mainModel.name)}Id`,
+        `${mainName}Id`,
         `${singular(mainTable)}Id`,
         `${singular(mainTable)}_id`,
-        `${toCamelCase(mainModel.name)}_id`,
+        `${mainName}_id`,
       ]
       for (let fk of candidateFksJoin) {
         if (joinModel.properties[fk]) {
@@ -192,11 +193,12 @@ export class D1 {
       }
 
       // Check if mainModel has a reference to joinModel
+      let joinName = joinModel.name ? toCamelCase(joinModel.name) : singular(joinTable)
       let candidateFksMain = [
-        `${toCamelCase(joinModel.name)}Id`,
+        `${joinName}Id`,
         `${singular(joinTable)}Id`,
         `${singular(joinTable)}_id`,
-        `${toCamelCase(joinModel.name)}_id`,
+        `${joinName}_id`,
       ]
       for (let fk of candidateFksMain) {
         if (mainModel.properties[fk]) {
@@ -216,7 +218,11 @@ export class D1 {
       const modelMap = new Map()
 
       let mainModel = q.model || (typeof table !== 'string' && table?.properties ? table : null)
-      let mainAlias = mainModel ? toCamelCase(mainModel.name) : null
+      let mainAlias = mainModel
+        ? mainModel.name
+          ? toCamelCase(mainModel.name)
+          : toCamelCase(singular(this.tableName(table)))
+        : null
       if (mainModel && mainAlias) {
         modelMap.set(mainAlias, mainModel)
       }
@@ -233,7 +239,10 @@ export class D1 {
         if (!j) continue
         let joinModel = j.model || (typeof j.table !== 'string' && j.table?.properties ? j.table : null)
         if (joinModel) {
-          let alias = j.as || j.alias || toCamelCase(joinModel.name)
+          let alias =
+            j.as ||
+            j.alias ||
+            (joinModel.name ? toCamelCase(joinModel.name) : toCamelCase(singular(this.tableName(j.table))))
           modelMap.set(alias, joinModel)
         }
       }
@@ -321,21 +330,23 @@ export class D1 {
       }
     }
 
+    let mainModel = q.model || (typeof table !== 'string' && table?.properties ? table : null)
     let cols = '*'
     if (q.columns) {
       cols = q.columns.join(', ')
     } else if (q.join) {
       // if columns are not specified, and we have a join, let's do the json_object trick
       let newCols = []
-      let mainModel = q.model || (typeof table !== 'string' && table?.properties ? table : null)
       if (mainModel && mainModel.properties) {
-        newCols.push(this.jsonObjectCol(mainModel))
+        let mainAlias = mainModel.name ? toCamelCase(mainModel.name) : toCamelCase(singular(mainTableName))
+        newCols.push(this.jsonObjectCol(mainModel, mainAlias))
       }
 
       for (const j of joins) {
         let model = j.model || (typeof j.table !== 'string' && j.table?.properties ? j.table : null)
         if (model) {
-          let alias = j.as || j.alias || toCamelCase(model.name)
+          let alias =
+            j.as || j.alias || (model.name ? toCamelCase(model.name) : toCamelCase(singular(this.tableName(j.table))))
           newCols.push(this.jsonObjectCol(model, alias))
         }
       }
@@ -355,7 +366,7 @@ export class D1 {
             let right = this.processCol(j.on[2], knownTables, this.tableName(j.table))
             onClause = `${left} ${op} ${right}`
           } else if (!onClause) {
-            onClause = this.inferOnClause(table, j)
+            onClause = this.inferOnClause(mainModel || table, j)
           }
           s += ` ${j.type || 'INNER'} JOIN ${this.tableName(j.table)} ON ${onClause}`
         }
@@ -761,7 +772,7 @@ export class D1 {
   jsonObjectCol(model, aliasOverride) {
     let tableName = this.tableName(model)
     // alias?
-    let alias = aliasOverride || toCamelCase(model.name)
+    let alias = aliasOverride || (model.name ? toCamelCase(model.name) : toCamelCase(singular(tableName)))
     let fields = Object.keys(model.properties)
     let args = fields.map((f) => `'${f}', ${tableName}.${f}`).join(', ')
     // we need to check if the record exists, if not, return null
@@ -778,10 +789,12 @@ export function toTableName(str) {
 }
 
 export function toCamelCase(str) {
+  if (!str || typeof str !== 'string') return ''
   return str.charAt(0).toLowerCase() + str.slice(1)
 }
 
 export function pluralize(str) {
+  if (!str || typeof str !== 'string') return ''
   if (str.endsWith('y') && !/[aeiou]y$/i.test(str)) {
     return str.slice(0, -1) + 'ies'
   }
@@ -789,6 +802,7 @@ export function pluralize(str) {
 }
 
 export function singular(str) {
+  if (!str || typeof str !== 'string') return ''
   if (str.endsWith('ies')) {
     return str.slice(0, -3) + 'y'
   }
