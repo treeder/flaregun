@@ -14,6 +14,9 @@ export default defineConfig((ctx) => {
         observability: {
           enabled: true,
           headSamplingRate: 1,
+          issues: {
+            enabled: true,
+          },
         },
         env: {
           ENV: bindings.text('preview'),
@@ -47,6 +50,9 @@ export default defineConfig((ctx) => {
       observability: {
         enabled: true,
         headSamplingRate: 1,
+        issues: {
+          enabled: true,
+        },
       },
       env: {
         ENV: bindings.text('prod'),
