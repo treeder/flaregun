@@ -225,7 +225,10 @@ export function createWorker(options = {}) {
             const handlers = await resolveHandlers(module, method)
             return await runTask(taskIdx + 1, 0, handlers, req, environment)
           } catch (err) {
-            console.error(`Error executing handler for ${task.info.key}:`, err)
+            const status = err?.status || err?.statusCode || err?.options?.status
+            if (!status || status >= 500) {
+              console.error(`Error executing handler for ${task.info.key}:`, err)
+            }
             throw err
           }
         }

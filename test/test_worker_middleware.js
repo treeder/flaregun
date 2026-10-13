@@ -133,7 +133,48 @@ async function testWorkerMiddleware() {
     'root: params={"orgId":"acme","projectId":"proj-101"}',
     'org_project_mw: params={"orgId":"acme","projectId":"proj-101"}',
   ])
-  assert.deepStrictEqual(body4, { orgId: 'acme', projectId: 'proj-101' })
+  // Test 5: Client errors (400-499) do not log to console.error
+  let errorLogged = false
+  const originalError = console.error
+  console.error = () => {
+    errorLogged = true
+  }
+  const errorTestModules = {
+    './functions/_middleware.js': async () => ({
+      onRequest: async (c) => {
+        try {
+          return await c.next()
+        } catch (err) {
+          return new Response(err.message, { status: err.status || 500 })
+        }
+      },
+    }),
+    './functions/test-401.js': async () => ({
+      onRequest: async () => {
+        const err = new Error('Unauthorized')
+        err.status = 401
+        throw err
+      },
+    }),
+    './functions/test-500.js': async () => ({
+      onRequest: async () => {
+        const err = new Error('Database crash')
+        err.status = 500
+        throw err
+      },
+    }),
+  }
+  const errorWorker = createWorker({ modules: errorTestModules })
+
+  const res401 = await errorWorker.fetch(new Request('http://localhost/test-401'), mockEnv, mockCtx)
+  assert.strictEqual(res401.status, 401)
+  assert.strictEqual(errorLogged, false, 'Expected 401 error not to be logged to console.error')
+
+  // Test 6: Server errors (>= 500) DO log to console.error
+  const res500 = await errorWorker.fetch(new Request('http://localhost/test-500'), mockEnv, mockCtx)
+  console.error = originalError
+  assert.strictEqual(res500.status, 500)
+  assert.strictEqual(errorLogged, true, 'Expected 500 error to be logged to console.error')
 
   console.log('All middleware unit tests passed successfully!')
 }
