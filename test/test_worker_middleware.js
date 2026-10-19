@@ -176,6 +176,58 @@ async function testWorkerMiddleware() {
   assert.strictEqual(res500.status, 500)
   assert.strictEqual(errorLogged, true, 'Expected 500 error to be logged to console.error')
 
+  // Test 7: ctx and ctx.exports are exposed on c in fetch, queue, and scheduled
+  const mockExports = { Sandbox: { idFromName: () => 'do-id' } }
+  const ctxWithExports = {
+    exports: mockExports,
+    waitUntil: () => {},
+    passThroughOnException: () => {},
+  }
+  let queueCtxCaptured = null
+  let scheduledCtxCaptured = null
+  const exportsWorker = createWorker({
+    modules: {
+      './functions/exports-check.js': async () => ({
+        onRequest: async (c) => {
+          return new Response(
+            JSON.stringify({
+              hasCtx: c.ctx === ctxWithExports,
+              hasExports: c.exports === mockExports,
+              hasSandbox: typeof c.exports?.Sandbox?.idFromName === 'function',
+            }),
+            { headers: { 'Content-Type': 'application/json' } }
+          )
+        },
+      }),
+      './functions/queue.js': async () => ({
+        queue: async (c) => {
+          queueCtxCaptured = c
+        },
+      }),
+      './functions/scheduled.js': async () => ({
+        scheduled: async (c) => {
+          scheduledCtxCaptured = c
+        },
+      }),
+    },
+  })
+
+  const resExports = await exportsWorker.fetch(new Request('http://localhost/exports-check'), mockEnv, ctxWithExports)
+  const exportsBody = await resExports.json()
+  assert.deepStrictEqual(exportsBody, {
+    hasCtx: true,
+    hasExports: true,
+    hasSandbox: true,
+  })
+
+  await exportsWorker.queue({ messages: [] }, mockEnv, ctxWithExports)
+  assert.strictEqual(queueCtxCaptured?.ctx, ctxWithExports)
+  assert.strictEqual(queueCtxCaptured?.exports, mockExports)
+
+  await exportsWorker.scheduled({ cron: '* * * * *' }, mockEnv, ctxWithExports)
+  assert.strictEqual(scheduledCtxCaptured?.ctx, ctxWithExports)
+  assert.strictEqual(scheduledCtxCaptured?.exports, mockExports)
+
   console.log('All middleware unit tests passed successfully!')
 }
 

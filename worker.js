@@ -209,9 +209,12 @@ export function createWorker(options = {}) {
           const context = {
             request: req,
             env: environment,
+            ctx,
+            exports: ctx.exports,
             params,
             data,
             waitUntil: ctx.waitUntil.bind(ctx),
+            passThroughOnException: () => ctx.passThroughOnException(),
             next: (nextReq, nextEnv) =>
               runTask(taskIdx, handlerIdx + 1, currentHandlers, nextReq || req, nextEnv || environment),
           }
@@ -261,6 +264,8 @@ export function createWorker(options = {}) {
         const c = {
           batch,
           env,
+          ctx,
+          exports: ctx.exports,
           data: {},
           waitUntil: (promise) => ctx.waitUntil(promise),
           passThroughOnException: () => ctx.passThroughOnException(),
@@ -282,6 +287,8 @@ export function createWorker(options = {}) {
         const c = {
           controller,
           env,
+          ctx,
+          exports: ctx.exports,
           data: {},
           waitUntil: (promise) => ctx.waitUntil(promise),
           passThroughOnException: () => ctx.passThroughOnException(),
