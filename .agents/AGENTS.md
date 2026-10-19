@@ -114,3 +114,19 @@ Triggers scheduled functions at custom intervals using a single Cloudflare minut
     await c.data.globals.scheduler.run(c, c.controller)
   }
   ```
+
+---
+
+## Worker Router & Context (`flaregun/worker.js`)
+
+`createWorker` builds a Cloudflare Worker router supporting Pages Functions-style routing (`functions/`), middleware, `queue`, and `scheduled` handlers.
+
+- **Context Properties (`c`)**:
+  - `c.request`: Incoming `Request` (in `fetch` handlers).
+  - `c.env`: Cloudflare Worker environment bindings (`env`).
+  - `c.ctx`: Cloudflare Worker `ExecutionContext` (`ctx`).
+  - `c.exports`: Same-worker loopback exports (`ctx.exports`, e.g. Durable Objects, Workflows, and WorkerEntrypoints declared under `exports` in `cloudflare.config.ts`).
+  - `c.params`: Route path parameters.
+  - `c.data`: Per-request shared state object populated by middleware.
+  - `c.waitUntil(promise)`: Schedules background work on `ctx`.
+
