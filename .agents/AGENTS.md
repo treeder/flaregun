@@ -129,4 +129,5 @@ Triggers scheduled functions at custom intervals using a single Cloudflare minut
   - `c.params`: Route path parameters.
   - `c.data`: Per-request shared state object populated by middleware.
   - `c.waitUntil(promise)`: Schedules background work on `ctx`.
+  - `c.passThroughOnException()`: Tells Cloudflare to pass unhandled exceptions through to the origin (fetch handlers only).
 
