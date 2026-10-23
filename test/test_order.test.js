@@ -125,4 +125,12 @@ test('test processCol with unary operators', async () => {
   expect(d1.processCol('(+threads.showAt)', ['threads'], 'threads')).toBe('(+threads.showAt)')
   // JSON subfield with unary +
   expect(d1.processCol('+data.priority', ['users'], 'users')).toBe("+json_extract(users.data, '$.priority')")
+
+  // Reject SQL injection in column names, JSON paths, operators, and directions
+  expect(() => d1.processCol("name = 'x' OR 1=1 --", ['users'], 'users')).toThrow(/Invalid column name/)
+  expect(() => d1.processCol("data.foo') OR 1=1 --", ['users'], 'users')).toThrow(/Invalid column name/)
+  expect(() => d1.singleW(['name', '= 1 OR 1=', 'x'], ['users'], 'users')).toThrow(/Invalid SQL operator/)
+  expect(() => d1.validateOrderDir('ASC; DROP TABLE users')).toThrow(/Invalid ORDER BY direction/)
+  await expect(d1._updatep('users', '1', { 'name = 1, id': '2' })).rejects.toThrow(/Field must be alphanumeric/)
+  expect(JSON.stringify({ n: 42n })).toBe('{"n":"42"}')
 })

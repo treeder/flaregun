@@ -4,8 +4,28 @@ import { nanoid } from 'nanoid'
 // This prevents TypeError: Do not know how to serialize a BigInt
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
 BigInt.prototype.toJSON = function () {
-  this.toString()
+  return this.toString()
 }
+
+const ALLOWED_OPS = new Set([
+  '=',
+  '==',
+  '!=',
+  '<>',
+  '<',
+  '<=',
+  '>',
+  '>=',
+  'like',
+  'not like',
+  'glob',
+  'in',
+  'not in',
+  'is',
+  'is not',
+  'is null',
+  'is not null',
+])
 
 export class D1 {
   /**
@@ -395,6 +415,9 @@ export class D1 {
       let orderClauses = []
 
       if (typeof q.order === 'string') {
+        if (/;|--|\/\*|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q.order)) {
+          throw new Error(`Invalid ORDER BY clause: ${q.order}`)
+        }
         orderClauses.push(q.order)
       } else if (Array.isArray(q.order)) {
         if (q.order.length > 0) {
@@ -402,7 +425,7 @@ export class D1 {
             for (const item of q.order) {
               if (Array.isArray(item) && item.length > 0) {
                 let o = this.processCol(item[0], knownTables, prefix)
-                let dir = item[1] ? ` ${item[1]}` : ''
+                let dir = this.validateOrderDir(item[1])
                 orderClauses.push(`${o}${dir}`)
               } else if (typeof item === 'string') {
                 orderClauses.push(this.processCol(item, knownTables, prefix))
@@ -410,14 +433,14 @@ export class D1 {
             }
           } else {
             let o = this.processCol(q.order[0], knownTables, prefix)
-            let dir = q.order[1] ? ` ${q.order[1]}` : ''
+            let dir = this.validateOrderDir(q.order[1])
             orderClauses.push(`${o}${dir}`)
           }
         }
       } else if (typeof q.order === 'object') {
         for (const [col, dir] of Object.entries(q.order)) {
           let o = this.processCol(col, knownTables, prefix)
-          let d = dir ? ` ${dir}` : ''
+          let d = this.validateOrderDir(dir)
           orderClauses.push(`${o}${d}`)
         }
       }
@@ -426,11 +449,32 @@ export class D1 {
         s += ' ORDER BY ' + orderClauses.join(', ')
       }
     }
-    if (q.limit) s += ' LIMIT ' + q.limit
-    if (q.offset) s += ' OFFSET ' + q.offset
+    if (q.limit !== undefined && q.limit !== null) {
+      const limit = Number(q.limit)
+      if (!Number.isInteger(limit) || limit < 0) {
+        throw new Error(`Invalid LIMIT value: ${q.limit}`)
+      }
+      s += ' LIMIT ' + limit
+    }
+    if (q.offset !== undefined && q.offset !== null) {
+      const offset = Number(q.offset)
+      if (!Number.isInteger(offset) || offset < 0) {
+        throw new Error(`Invalid OFFSET value: ${q.offset}`)
+      }
+      s += ' OFFSET ' + offset
+    }
     if (this.debug) console.log('SQL:', s, binds)
     let st = this.db.prepare(s).bind(...binds)
     return st
+  }
+
+  validateOrderDir(dir) {
+    if (!dir) return ''
+    const trimmed = String(dir).trim()
+    if (!/^(?:ASC|DESC)(?:\s+NULLS\s+(?:FIRST|LAST))?$/i.test(trimmed)) {
+      throw new Error(`Invalid ORDER BY direction: ${dir}`)
+    }
+    return ` ${trimmed}`
   }
 
   addWhere(whereClause, w, binds, knownTables, prefix) {
@@ -480,11 +524,21 @@ export class D1 {
     if (typeof col !== 'string') return col
     let q0 = col
 
+    if (/;|--|\/\*|\*\/|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q0)) {
+      throw new Error(`Invalid column name: ${col}`)
+    }
+
     // Preserve leading unary operators (e.g. '+threads.showAt' or '-threads.score')
     let unary = ''
     if ((q0.startsWith('+') || q0.startsWith('-')) && q0.length > 1) {
       unary = q0[0]
       q0 = q0.slice(1)
+    }
+
+    if (!(q0.includes('$') || q0.includes('('))) {
+      if (!/^[a-zA-Z0-9_.]+$/.test(q0)) {
+        throw new Error(`Invalid column name: ${col}`)
+      }
     }
 
     // Auto prefix
@@ -521,15 +575,21 @@ export class D1 {
     let w = []
     let binds = []
     let q0 = this.processCol(q2[0], knownTables, prefix)
-    let op = q2[1]?.toLowerCase()
+    let op = q2[1]?.toLowerCase()?.trim()
+    if (!op || !ALLOWED_OPS.has(op)) {
+      throw new Error(`Invalid SQL operator: ${q2[1]}`)
+    }
     let val = q2[2]
 
     if (op === 'is null' || ((op === '=' || op === '==' || op === 'is') && val === null)) {
       w.push(` ${q0} IS NULL`)
     } else if (op === 'is not null' || ((op === '!=' || op === '<>' || op === 'is not') && val === null)) {
       w.push(` ${q0} IS NOT NULL`)
-    } else if (op === 'in') {
-      w.push(` ${q0} IN (${val.map((_, i) => '?').join(',')})`)
+    } else if (op === 'in' || op === 'not in') {
+      if (!Array.isArray(val) || val.length === 0) {
+        throw new Error(`Operator '${op}' requires a non-empty array`)
+      }
+      w.push(` ${q0} ${op.toUpperCase()} (${val.map(() => '?').join(',')})`)
       binds.push(...this.toValues(val))
     } else {
       w.push(` ${q0} ${q2[1]} ?`)
@@ -655,6 +715,11 @@ export class D1 {
     fields.push('updatedAt')
     values.push(now)
     ob.updatedAt = now
+    for (let f of fields) {
+      if (!/^[a-zA-Z0-9]+$/.test(f)) {
+        throw new Error('Field must be alphanumeric')
+      }
+    }
     let fieldsAndValues = this.toFields(fields, values, opts)
     values = fieldsAndValues.values
     let s = `UPDATE ${this.tableName(table)} SET ${fieldsAndValues.fieldString} WHERE id = ?`

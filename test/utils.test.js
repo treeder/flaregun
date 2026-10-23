@@ -8,7 +8,7 @@ describe('utils', () => {
       expect(hostname(c)).toBe('example.com')
     })
 
-    it('extracts hostname from x-forwarded-host header if present', () => {
+    it('extracts hostname from x-forwarded-host header if present on local/internal host', () => {
       const c = {
         request: {
           headers: new Headers({
@@ -18,6 +18,30 @@ describe('utils', () => {
         },
       }
       expect(hostname(c)).toBe('myapp.workers.dev')
+    })
+
+    it('ignores spoofed x-forwarded-host header on production host', () => {
+      const c = {
+        request: {
+          headers: new Headers({
+            host: 'myapp.workers.dev',
+            'x-forwarded-host': 'evil.attacker.com',
+          }),
+        },
+      }
+      expect(hostname(c)).toBe('myapp.workers.dev')
+      expect(hostURL(c)).toBe('https://myapp.workers.dev')
+    })
+
+    it('does not treat localhost subdomain as http localhost', () => {
+      const c = {
+        request: {
+          headers: new Headers({
+            host: 'localhost.attacker.com',
+          }),
+        },
+      }
+      expect(hostURL(c)).toBe('https://localhost.attacker.com')
     })
   })
 
