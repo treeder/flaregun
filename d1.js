@@ -420,10 +420,19 @@ export class D1 {
       let orderClauses = []
 
       if (typeof q.order === 'string') {
-        if (/;|--|\/\*|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q.order)) {
-          throw new Error(`Invalid ORDER BY clause: ${q.order}`)
+        const parts = q.order
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean)
+        for (const part of parts) {
+          const match = part.match(/^(\S+?)(?:\s+(.*))?$/)
+          if (!match) {
+            throw new Error(`Invalid ORDER BY clause: ${q.order}`)
+          }
+          const o = this.processCol(match[1], knownTables, prefix)
+          const dir = this.validateOrderDir(match[2])
+          orderClauses.push(`${o}${dir}`)
         }
-        orderClauses.push(q.order)
       } else if (Array.isArray(q.order)) {
         if (q.order.length > 0) {
           if (Array.isArray(q.order[0])) {
@@ -536,11 +545,16 @@ export class D1 {
       q0 = q0.slice(1)
     }
 
-    if (!(q0.includes('$') || q0.includes('('))) {
-      if (!/^[a-zA-Z0-9_.]+$/.test(q0)) {
-        throw new Error(`Invalid column name: ${col}`)
-      }
-    } else if (/;|--|\/\*|\*\/|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q0)) {
+    let checkCol = q0
+    if (checkCol.startsWith('(') && checkCol.endsWith(')')) {
+      checkCol = checkCol.slice(1, -1).trim()
+    }
+    if ((checkCol.startsWith('+') || checkCol.startsWith('-')) && checkCol.length > 1) {
+      checkCol = checkCol.slice(1)
+    }
+
+    const isExplicitJsonExtract = /^json_extract\(\s*[a-zA-Z0-9_.]+\s*,\s*'\$\.[a-zA-Z0-9_.]+'\s*\)$/i.test(checkCol)
+    if (!isExplicitJsonExtract && !/^[a-zA-Z0-9_.]+$/.test(checkCol)) {
       throw new Error(`Invalid column name: ${col}`)
     }
 
