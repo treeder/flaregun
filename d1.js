@@ -19,6 +19,11 @@ const ALLOWED_OPS = new Set([
   'like',
   'not like',
   'glob',
+  'not glob',
+  'regexp',
+  'not regexp',
+  'match',
+  'not match',
   'in',
   'not in',
   'is',
@@ -449,14 +454,14 @@ export class D1 {
         s += ' ORDER BY ' + orderClauses.join(', ')
       }
     }
-    if (q.limit !== undefined && q.limit !== null) {
+    if (q.limit) {
       const limit = Number(q.limit)
       if (!Number.isInteger(limit) || limit < 0) {
         throw new Error(`Invalid LIMIT value: ${q.limit}`)
       }
       s += ' LIMIT ' + limit
     }
-    if (q.offset !== undefined && q.offset !== null) {
+    if (q.offset) {
       const offset = Number(q.offset)
       if (!Number.isInteger(offset) || offset < 0) {
         throw new Error(`Invalid OFFSET value: ${q.offset}`)
@@ -524,10 +529,6 @@ export class D1 {
     if (typeof col !== 'string') return col
     let q0 = col
 
-    if (/;|--|\/\*|\*\/|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q0)) {
-      throw new Error(`Invalid column name: ${col}`)
-    }
-
     // Preserve leading unary operators (e.g. '+threads.showAt' or '-threads.score')
     let unary = ''
     if ((q0.startsWith('+') || q0.startsWith('-')) && q0.length > 1) {
@@ -539,6 +540,8 @@ export class D1 {
       if (!/^[a-zA-Z0-9_.]+$/.test(q0)) {
         throw new Error(`Invalid column name: ${col}`)
       }
+    } else if (/;|--|\/\*|\*\/|\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b/i.test(q0)) {
+      throw new Error(`Invalid column name: ${col}`)
     }
 
     // Auto prefix
@@ -647,7 +650,7 @@ export class D1 {
       ob.updatedAt = now
     }
     for (let f of fields) {
-      if (!/^[a-zA-Z0-9]+$/.test(f)) {
+      if (!/^[a-zA-Z0-9_]+$/.test(f)) {
         throw new Error('Field must be alphanumeric')
       }
     }
@@ -716,7 +719,7 @@ export class D1 {
     values.push(now)
     ob.updatedAt = now
     for (let f of fields) {
-      if (!/^[a-zA-Z0-9]+$/.test(f)) {
+      if (!/^[a-zA-Z0-9_]+$/.test(f)) {
         throw new Error('Field must be alphanumeric')
       }
     }
