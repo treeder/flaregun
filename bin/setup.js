@@ -13,7 +13,6 @@ export async function setup(args) {
       envFilter = args[idx + 1]
     }
   }
-  console.log('ENV:', process.env)
   let c = {
     env: process.env,
     envFilter,

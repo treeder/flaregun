@@ -16,13 +16,14 @@ const apiURL = 'https://api.cloudflare.com/client/v4'
 export async function fetchCF(c, path, opts = {}) {
   let q = ''
   if (opts.q) {
-    q = '?'
+    const params = new URLSearchParams()
     for (let k in opts.q) {
-      q += `${k}=${opts.q[k]}&`
+      params.append(k, opts.q[k])
     }
-    q = q.slice(0, -1)
+    const qs = params.toString()
+    if (qs) q = `?${qs}`
   }
-  let u = `${apiURL}/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}${path}${q}`
+  let u = `${apiURL}/accounts/${encodeURIComponent(process.env.CLOUDFLARE_ACCOUNT_ID || '')}${path}${q}`
   console.log(u)
   let r = await api(u, {
     ...{
