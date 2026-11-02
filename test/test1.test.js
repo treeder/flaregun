@@ -17,4 +17,8 @@ test('test1', async () => {
   console.log('r2:', r)
   expect(r.user).toBeDefined()
   expect(r.user.name).toBe(user.name)
+
+  let allRes = await c.api.fetch(`/v1/users`)
+  expect(Array.isArray(allRes.users)).toBe(true)
+  expect(allRes.users.some((u) => u.id === r.user.id)).toBe(true)
 })

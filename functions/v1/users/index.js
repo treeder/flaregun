@@ -1,7 +1,7 @@
 import { User } from '../../data/users.js'
 
 export async function onRequestGet(c) {
-  let users = await c.data.d1.query(User)
+  let users = await c.data.d1.all(User)
   return Response.json({ users })
 }
 

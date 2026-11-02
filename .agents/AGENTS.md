@@ -31,9 +31,10 @@ The `D1` class wraps the native Cloudflare D1 Database binding to add advanced o
   - **JSON Merge Patch**: Object properties inside the update payload are automatically patched on the database using SQL `json_patch(COALESCE(field, '{}'), ?)` (conforming to RFC 7396) if the column contains JSON data.
 - **Count**: `await d1.count(table, q = {})` returns the count of matching rows.
 - **First**: `await d1.first(table, q = {})` retrieves the first matching record.
+- **All**: `await d1.all(table, q = {})` (or `d1.query(table, q = {})`) retrieves all matching records.
 
-### Advanced Querying (`d1.query(table, q)`)
-The query method accepts a query options object `q` with the following parameters:
+### Advanced Querying (`d1.all(table, q)` / `d1.query(table, q)`)
+The `all` / `query` methods accept a query options object `q` with the following parameters:
 - `where`: Filters the query.
   - **Equality Object**: `{ email: 'user@example.com', status: 'active' }` (creates `WHERE email = ? AND status = ?`).
   - **Operator Array**: `[['createdAt', '>', date], ['orgId', '=', orgId]]`.

@@ -37,14 +37,14 @@ await d1.update('users', user.id, user)
 // get object
 user = d1.get('users', user.id)
 
-// querying
+// querying (`all`, or `query` alias)
 // simple equality queries
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   where: { email: 'x@y.com' },
 })
 
 // more complex queries
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   where: [
     ['orgId', '=', orgId],
     ['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)],
@@ -54,7 +54,7 @@ let users = await d1.query('users', {
 })
 
 // multiple order clauses
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   order: [
     ['lastName', 'asc'],
     ['firstName', 'asc'],
@@ -64,17 +64,17 @@ let users = await d1.query('users', {
 // OR queries
 let where = []
 where.push([['showAt', '<=', now], 'OR', ['showAt', 'IS', null]])
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   where,
 })
 
 // querying JSON data using path notation
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   where: [['data.awesome', '=', true]],
 })
 
 // join queries
-let users = await d1.query('users', {
+let users = await d1.all('users', {
   where: [['createdAt', '>', new Date(Date.now() - 48 * 60 * 60 * 1000)]],
   join: [
     {

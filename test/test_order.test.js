@@ -137,4 +137,26 @@ test('test processCol with unary operators', async () => {
   )
   await expect(d1._updatep('users', '1', { 'name = 1, id': '2' })).rejects.toThrow(/Field must be alphanumeric/)
   expect(JSON.stringify({ n: 42n })).toBe('{"n":"42"}')
+
+  // Verify d1.all and d1.query alias
+  let preparedSql = null
+  const mockD1 = new D1({
+    prepare(sql) {
+      preparedSql = sql
+      return {
+        bind() {
+          return {
+            async all() {
+              return { results: [{ id: '1', name: 'Alice' }] }
+            },
+          }
+        },
+      }
+    },
+  })
+  const allRows = await mockD1.all('users', { where: { name: 'Alice' } })
+  expect(allRows).toEqual([{ id: '1', name: 'Alice' }])
+  expect(preparedSql).toBe('SELECT * FROM users WHERE name = ?')
+  const queryRows = await mockD1.query('users', { where: { name: 'Alice' } })
+  expect(queryRows).toEqual(allRows)
 })

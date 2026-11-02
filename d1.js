@@ -128,13 +128,13 @@ export class D1 {
   }
 
   /**
-   * Query for data. See README for example.
+   * Retrieve all matching records. See README for example.
    *
    * @param {*} table
    * @param {*} q
    * @returns
    */
-  async query(table, q = {}) {
+  async all(table, q = {}) {
     if (typeof table != 'string') {
       q.model = table
     }
@@ -142,9 +142,20 @@ export class D1 {
       let st = this.prepStmt(table, q)
       return await st.all()
     })
-    // console.log("QUERY:", r)
+    // console.log("ALL:", r)
     this.parseResults(table, q, r.results)
     return r.results
+  }
+
+  /**
+   * Query for data (alias for `all`). See README for example.
+   *
+   * @param {*} table
+   * @param {*} q
+   * @returns
+   */
+  async query(table, q = {}) {
+    return this.all(table, q)
   }
 
   async count(table, q = {}) {
