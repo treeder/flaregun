@@ -32,6 +32,19 @@ const ALLOWED_OPS = new Set([
   'is not null',
 ])
 
+const RETRYABLE_D1_PATTERNS = [
+  'network connection lost',
+  'storage caused object to be reset',
+  'reset because its code was updated',
+  'd1_error: internal error',
+  'd1 db is overloaded',
+  'requests queued for too long',
+  'too many requests queued',
+  'cannot resolve d1 db due to transient issue',
+  'cannot resolve durable object due to transient issue',
+  'replica disconnected from primary',
+]
+
 export class D1 {
   /**
    * Pass in a sqlite or D1 instance,
@@ -59,8 +72,9 @@ export class D1 {
       } catch (err) {
         if (this.shouldRetry(err, attempt)) {
           if (this.debug) console.log(`Retrying D1 operation, attempt ${attempt}: ${err.message}`)
-          // Exponential backoff
-          await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 10 + Math.random() * 10))
+          // Exponential backoff with jitter
+          const delay = Math.min(1000, Math.pow(2, attempt) * 15) + Math.random() * 15
+          await new Promise((r) => setTimeout(r, delay))
           attempt++
           continue
         }
@@ -70,12 +84,9 @@ export class D1 {
   }
 
   shouldRetry(err, attempt) {
-    const errMsg = String(err)
-    const isRetryableError =
-      errMsg.includes('Network connection lost') ||
-      errMsg.includes('storage caused object to be reset') ||
-      errMsg.includes('reset because its code was updated')
-    return attempt <= 5 && isRetryableError
+    if (attempt > 5 || !err) return false
+    const errMsg = String(err?.message || err).toLowerCase()
+    return RETRYABLE_D1_PATTERNS.some((pattern) => errMsg.includes(pattern))
   }
 
   /**

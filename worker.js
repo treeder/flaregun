@@ -38,10 +38,67 @@ function parsePathPattern(pathStr, isMiddleware = false) {
   }
 
   const regex = isMiddleware
-    ? (regexStr === '/' ? new RegExp('^(?:/.*)?$') : new RegExp(`^${regexStr}(?:/.*)?$`))
+    ? regexStr === '/'
+      ? new RegExp('^(?:/.*)?$')
+      : new RegExp(`^${regexStr}(?:/.*)?$`)
     : new RegExp(`^${regexStr}/?$`)
 
   return { regex, paramNames, segments }
+}
+
+const SCANNER_DOTFILE_SEGMENT_RE =
+  /(?:^|\/)\.(?:git|svn|hg|bzr|env|aws|ssh|docker|kube|vscode|idea|ds_store|htaccess|htpasswd|npmrc|yarnrc|gitlab-ci|github|circleci|travis|bashrc|profile|bash_history|config|local|cache)(?:$|\/|\.|[-_])/i
+
+const SCANNER_EXTENSION_RE =
+  /\.(?:php\d?|phtml|phar|asp|aspx|jsp|jspx|cgi|pl|sh|bash|env|ini|conf|cfg|bak|old|orig|save|swp|sql|sqlite|sqlite3|db|log|pem|key|crt|p12|pfx)(?:$|\/)/i
+
+const SCANNER_PATH_RE =
+  /(?:^|\/)(?:wp-admin|wp-includes|wp-content|wp-login|wlwmanifest\.xml|xmlrpc\.php|phpmyadmin|pma|myadmin|adminer|actuator|_profiler|_ignition|telescope|phpinfo|php_info|server-status|server-info|cgi-bin|vendor\/phpunit|credentials\.json|secrets\.json|service-account\.json|web\.config|composer\.(?:json|lock)|dockerfile|docker-compose(?:\.ya?ml)?|etc\/(?:passwd|shadow|hosts)|proc\/self|windows\/win\.ini|boot\.ini)(?:$|\/)/i
+
+function extractRawPathname(rawUrl = '') {
+  if (typeof rawUrl !== 'string' || !rawUrl) return ''
+  const withoutHash = rawUrl.split('#')[0]
+  const withoutQuery = withoutHash.split('?')[0]
+  const schemeIdx = withoutQuery.indexOf('://')
+  if (schemeIdx >= 0) {
+    const slashIdx = withoutQuery.indexOf('/', schemeIdx + 3)
+    return slashIdx >= 0 ? withoutQuery.slice(slashIdx) : '/'
+  }
+  return withoutQuery
+}
+
+export function isVulnerabilityScanPath(pathname = '', rawUrl = '') {
+  if (typeof pathname !== 'string' || !pathname) return false
+  const rawPath = extractRawPathname(rawUrl) || pathname
+  if (/(?:%2e%2e|%252e|%00|\\)/i.test(rawPath)) {
+    return true
+  }
+  let decoded = pathname
+  try {
+    decoded = decodeURIComponent(rawPath)
+  } catch {
+    return true
+  }
+  if (decoded.includes('..') || decoded.includes('\0') || decoded.includes('\\')) {
+    return true
+  }
+  if (decoded.startsWith('/node_modules/.vite/') || decoded.startsWith('/@')) {
+    return false
+  }
+  if (SCANNER_DOTFILE_SEGMENT_RE.test(decoded)) return true
+  if (SCANNER_EXTENSION_RE.test(decoded)) return true
+  if (SCANNER_PATH_RE.test(decoded)) return true
+  return false
+}
+
+function notFoundScanResponse() {
+  return new Response('Not Found', {
+    status: 404,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=300',
+    },
+  })
 }
 
 async function resolveHandlers(module, method) {
@@ -196,6 +253,10 @@ export function createWorker(options = {}) {
         }
       }
 
+      if (!matchedRoute && isVulnerabilityScanPath(pathname, request.url)) {
+        return notFoundScanResponse()
+      }
+
       const tasks = matchedMiddlewares.map((m) => ({ type: 'middleware', info: m }))
       if (matchedRoute) {
         tasks.push({ type: 'endpoint', info: matchedRoute })
@@ -236,7 +297,10 @@ export function createWorker(options = {}) {
           }
         }
 
-        // Reached the end of the chain, fallback to ASSETS
+        // Reached the end of the chain, fallback to ASSETS (never forward vulnerability scanner probes)
+        if (isVulnerabilityScanPath(new URL(req.url).pathname, req.url)) {
+          return notFoundScanResponse()
+        }
         try {
           const fallbackResponse = await environment.ASSETS.fetch(req)
           if (req.headers.get('Upgrade')?.toLowerCase() === 'websocket' || fallbackResponse.status === 101) {

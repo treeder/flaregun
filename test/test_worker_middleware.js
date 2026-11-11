@@ -42,7 +42,7 @@ async function testWorkerMiddleware() {
           }),
           {
             headers: { 'Content-Type': 'application/json' },
-          }
+          },
         )
       },
     }),
@@ -91,10 +91,7 @@ async function testWorkerMiddleware() {
   const body1 = await res1.json()
 
   assert.strictEqual(res1.status, 200)
-  assert.deepStrictEqual(log, [
-    'root: params={"id":"42"}',
-    'users_id: params={"id":"42"}',
-  ])
+  assert.deepStrictEqual(log, ['root: params={"id":"42"}', 'users_id: params={"id":"42"}'])
   assert.strictEqual(body1.data.root, true)
   assert.strictEqual(body1.data.userId, '42')
   assert.strictEqual(body1.params.id, '42')
@@ -104,10 +101,7 @@ async function testWorkerMiddleware() {
   const req2 = new Request('http://localhost/api/users')
   const res2 = await worker.fetch(req2, mockEnv, mockCtx)
 
-  assert.deepStrictEqual(log, [
-    'root: params={}',
-    'api: params={}',
-  ])
+  assert.deepStrictEqual(log, ['root: params={}', 'api: params={}'])
 
   // Test 3: GET /docs/guides/intro
   log.length = 0
@@ -195,7 +189,7 @@ async function testWorkerMiddleware() {
               hasExports: c.exports === mockExports,
               hasSandbox: typeof c.exports?.Sandbox?.idFromName === 'function',
             }),
-            { headers: { 'Content-Type': 'application/json' } }
+            { headers: { 'Content-Type': 'application/json' } },
           )
         },
       }),
@@ -227,6 +221,34 @@ async function testWorkerMiddleware() {
   await exportsWorker.scheduled({ cron: '* * * * *' }, mockEnv, ctxWithExports)
   assert.strictEqual(scheduledCtxCaptured?.ctx, ctxWithExports)
   assert.strictEqual(scheduledCtxCaptured?.exports, mockExports)
+
+  // Test 8: Vulnerability scan probes return 404 without invoking middleware or ASSETS.fetch
+  let assetsCalls = 0
+  let mwCalls = 0
+  const scanWorker = createWorker({
+    modules: {
+      './functions/_middleware.js': async () => ({
+        onRequest: async (c) => {
+          mwCalls++
+          return c.next()
+        },
+      }),
+    },
+  })
+  const scanEnv = {
+    ASSETS: {
+      fetch: async () => {
+        assetsCalls++
+        return new Response('asset', { status: 200 })
+      },
+    },
+  }
+  for (const probe of ['/.git/HEAD', '/main/.env', '/wp-admin/install.php', '/phpinfo.php', '/_profiler/phpinfo']) {
+    const res = await scanWorker.fetch(new Request(`http://localhost${probe}`), scanEnv, mockCtx)
+    assert.strictEqual(res.status, 404, `Expected 404 for ${probe}`)
+  }
+  assert.strictEqual(mwCalls, 0, 'Scanner probes should not invoke middleware')
+  assert.strictEqual(assetsCalls, 0, 'Scanner probes should not invoke ASSETS.fetch')
 
   console.log('All middleware unit tests passed successfully!')
 }
